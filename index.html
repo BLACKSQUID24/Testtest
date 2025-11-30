@@ -11,8 +11,8 @@
         
         body {
             margin: 0;
-            background: #050816;
-            color: #fff;
+            background: #230181;
+            color: #000000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -73,7 +73,7 @@
 
 <body>
     <div class="container">
-        <h1>Hand Gesture AI ✋ (Robust)</h1>
+        <h1>Hand by emmy AI ✋ (fart so loud)</h1>
         <div class="hint">
             ยกมือหน้ากล้อง ลองทำท่าต่าง ๆ เช่น กำมือ / แบมือ / ชูนิ้วโป้ง / ชู 1–5 นิ้ว
         </div>
@@ -211,6 +211,7 @@
                     processing = false;
                     return;
                 }
+        
 
                 canvasCtx.save();
                 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -298,12 +299,12 @@
         });
 
         hands.setOptions({
-            maxNumHands: 1, // เบาลง
-            modelComplexity: 0, // 0 = เบาสุด
+            maxNumHands: 2, // เบาลง
+            modelComplexity: 1, // 0 = เบาสุด
             minDetectionConfidence: 0.6,
             minTrackingConfidence: 0.6,
         });
-
+        
         hands.onResults(onResults);
 
         const camera = new Camera(videoElement, {
