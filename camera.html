@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <title> Designing website for helping people learning sign languages with 3D model </title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            background: #230181;
+            color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 90vw;
+            max-width: 900px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 6px;
+            font-size: 1.4rem;
+        }
+        
+        .hint {
+            font-size: 0.85rem;
+            opacity: 0.75;
+            margin-bottom: 10px;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 4 / 3;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            background: #000;
+        }
+        
+        video,
+        canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        #gesture {
+            margin-top: 6px;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Hand by emmy AI ✋ (fart so loud)</h1>
+        <div class="hint">
+            ยกมือหน้ากล้อง ลองทำท่าต่าง ๆ เช่น นิ้วกลาง / แบมือ / ชูนิ้วโป้ง 
+        </div>
+
+        <div class="video-wrapper">
+            <video id="video" playsinline></video>
+            <canvas id="output"></canvas>
+        </div>
+
+        <div id="status">กำลังขอสิทธิ์ใช้กล้อง...</div>
+        <div id="gesture">ท่ามือ: -</div>
+    </div>
+
+    <!-- MediaPipe CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script>
+        const videoElement = document.getElementById("video");
+        const canvasElement = document.getElementById("output");
+        const canvasCtx = canvasElement.getContext("2d");
+        const statusEl = document.getElementById("status");
+        const gestureEl = document.getElementById("gesture");
+
+        // index ของจุดปลายนิ้วและข้อกลาง
+        const FINGER_TIPS = [4, 8, 12, 16, 20]; // thumb, index, middle, ring, pinky
+        const FINGER_PIPS = [2, 6, 10, 14, 18];
+
+        let canvasInitialized = false;
+        let processing = false; // กันส่งเฟรมซ้อน
+
+        function getFingerStates(landmarks, handednessLabel) {
+            const fingers = {
+                thumb: false,
+                index: false,
+                middle: false,
+                ring: false,
+                pinky: false,
+            };
+
+            if (!landmarks || landmarks.length < 21) return fingers;
+
+            // นิ้วโป้ง
+            const thumbTip = landmarks[FINGER_TIPS[0]];
+            const thumbMcp = landmarks[FINGER_PIPS[0]];
+
+            if (thumbTip && thumbMcp) {
+                if (handednessLabel === "Right") {
+                    if (thumbTip.x > thumbMcp.x) fingers.thumb = true;
+                } else {
+                    if (thumbTip.x < thumbMcp.x) fingers.thumb = true;
+                }
+            }
+
+            // นิ้วอื่น ๆ
+            const names = ["index", "middle", "ring", "pinky"];
+            for (let i = 1; i < FINGER_TIPS.length; i++) {
+                const tip = landmarks[FINGER_TIPS[i]];
+                const pip = landmarks[FINGER_PIPS[i]];
+                if (!tip || !pip) continue;
+                if (tip.y < pip.y) {
+                    fingers[names[i - 1]] = true;
+                }
+            }
+
+            return fingers;
+        }
+
+        function classifyGesture(fingers) {
+            const upList = [];
+            for (const [name, state] of Object.entries(fingers)) {
+                if (state) upList.push(name);
+            }
+            const count = upList.length;
+
+            if (count === 0) return "กำมือ (0 นิ้ว)";
+            if (count === 5) return "แบมือ (5 นิ้ว)";
+
+            if (
+                fingers.thumb &&
+                !fingers.index &&
+                !fingers.middle &&
+                !fingers.ring &&
+                !fingers.pinky
+            ) {
+                return "ชูนิ้วกลา (กลาง 👍)";
+            }
+
+            if (
+                fingers.index &&
+                !fingers.thumb &&
+                !fingers.middle &&
+                !fingers.ring &&
+                !fingers.pinky
+            ) {
+                return "ชู 1 นิ้ว (นิ้วชี้)";
+            }
+
+            if (
+                fingers.index &&
+                fingers.middle &&
+                !fingers.ring &&
+                !fingers.pinky
+            ) {
+                return "ชู 2 นิ้ว (ท่า V ✌️)";
+            }
+
+            if (!fingers.thumb &&
+                fingers.index &&
+                fingers.middle &&
+                fingers.ring &&
+                !fingers.pinky
+            ) {
+                return "ชู 3 นิ้ว";
+            }
+
+            if (count === 4 && !fingers.thumb) return "ชู 4 นิ้ว";
+            if (count === 4 && !fingers.pinky) return "4 นิ้ว (ยกเว้นก้อย)";
+
+            return `ยก ${count} นิ้ว`;
+        }
+
+        function onResults(results) {
+            try {
+                // เซ็ตขนาด canvas แค่ครั้งแรก
+                if (!canvasInitialized && videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    canvasInitialized = true;
+                }
+
+                if (!canvasInitialized) {
+                    // ยังไม่ได้ขนาดวิดีโอจริง ก็ยังไม่ต้องวาดอะไร
+                    processing = false;
+                    return;
+                }
+        
+
+                canvasCtx.save();
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                // วาดภาพจากกล้อง
+                if (results.image) {
+                    canvasCtx.drawImage(
+                        results.image,
+                        0,
+                        0,
+                        canvasElement.width,
+                        canvasElement.height
+                    );
+                }
+
+                let gestureText = "ท่ามือ: -";
+
+                const hasHands =
+                    Array.isArray(results.multiHandLandmarks) &&
+                    results.multiHandLandmarks.length > 0;
+
+                if (hasHands) {
+                    statusEl.textContent =
+                        "ตรวจพบมือ " + results.multiHandLandmarks.length + " ข้าง";
+
+                    // วาดโครงกระดูกมือ (ถ้า function มีจริง)
+                    const canDraw =
+                        typeof drawConnectors === "function" &&
+                        typeof drawLandmarks === "function" &&
+                        typeof HAND_CONNECTIONS !== "undefined";
+
+                    if (canDraw) {
+                        for (const lms of results.multiHandLandmarks) {
+                            drawConnectors(canvasCtx, lms, HAND_CONNECTIONS, {
+                                lineWidth: 3
+                            });
+                            drawLandmarks(canvasCtx, lms, {
+                                radius: 3
+                            });
+                        }
+                    }
+
+                    // วิเคราะห์ท่ามือจากมือข้างแรก (ถ้ามีข้อมูล handedness)
+                    let handed = "Unknown";
+                    if (
+                        Array.isArray(results.multiHandedness) &&
+                        results.multiHandedness.length > 0 &&
+                        results.multiHandedness[0].classification &&
+                        results.multiHandedness[0].classification.length > 0 &&
+                        typeof results.multiHandedness[0].classification[0].label === "string"
+                    ) {
+                        handed = results.multiHandedness[0].classification[0].label; // "Left" หรือ "Right"
+                    }
+
+                    const landmarks = results.multiHandLandmarks[0];
+                    const fingers = getFingerStates(landmarks, handed);
+                    const classified = classifyGesture(fingers);
+                    gestureText = `ท่ามือ (${handed}): ${classified}`;
+
+                    // กล่องข้อความบนภาพ
+                    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                    canvasCtx.fillRect(10, 10, 340, 40);
+                    canvasCtx.fillStyle = "#00ff99";
+                    canvasCtx.font = "16px system-ui";
+                    canvasCtx.fillText(classified, 18, 36);
+                } else {
+                    statusEl.textContent = "ไม่พบมือ ลองยกมือเข้ากล้องดูนะ 👋";
+                }
+
+                gestureEl.textContent = gestureText;
+
+                canvasCtx.restore();
+            } catch (e) {
+                console.error("onResults error:", e);
+                statusEl.textContent = "เกิดข้อผิดพลาดในการประมวลผล ดู console log";
+            } finally {
+                processing = false; // ปลดล็อกเฟรมถัดไป
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            },
+        });
+
+        hands.setOptions({
+            maxNumHands: 2, // เบาลง
+            modelComplexity: 1, // 0 = เบาสุด
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6,
+        });
+        
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async() => {
+                // กันส่งเฟรมซ้อน
+                if (processing) return;
+                processing = true;
+                try {
+                    await hands.send({
+                        image: videoElement
+                    });
+                } catch (e) {
+                    console.error("send error:", e);
+                    processing = false;
+                }
+            },
+            width: 480,
+            height: 360,
+        });
+
+        camera
+            .start()
+            .then(() => {
+                statusEl.textContent = "กำลังประมวลผลมือจากกล้อง...";
+            })
+            .catch((err) => {
+                console.error(err);
+                statusEl.textContent =
+                    "เปิดกล้องไม่ได้ ตรวจสอบสิทธิ์/เบราว์เซอร์ และการอนุญาตกล้อง";
+            });
+    </script>
+</body>
+
+</html>
