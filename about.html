@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - 3D for translate.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- COPY CSS FROM INDEX.HTML HERE --- */
+        :root {
+            --color-bg: #0a0a0a;
+            --color-text-light: #F0F0F0;
+            --color-accent: #00FF99;
+            --color-accent-hover: #00E688;
+            --color-border-subtle: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { 
+            margin: 0; 
+            background-color: var(--color-bg); 
+            color: var(--color-text-light); 
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.15) 0%, transparent 40%);
+        }
+        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border-subtle); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
+        .nav-group { display: flex; align-items: center; }
+        .nav-links { display: flex; gap: 25px; }
+        .nav-links a { color: var(--color-text-light); text-decoration: none; font-size: 1rem; opacity: 0.8; transition: opacity 0.2s; text-transform: capitalize; }
+        .nav-links a:hover { opacity: 1; color: var(--color-accent); }
+        .header-cta { background-color: var(--color-accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-left: 25px; transition: all 0.3s; }
+        .header-cta:hover { background-color: var(--color-accent-hover); transform: translateY(-1px); }
+
+        .container { max-width: 1000px; margin: 50px auto; padding: 20px; text-align: center; }
+        h1 { font-size: 2.5rem; margin-bottom: 40px; }
+        h1 span { color: var(--color-accent); }
+
+        /* ABOUT US SPECIFIC STYLES */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .team-card { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--color-border-subtle); padding: 30px; border-radius: 15px; transition: transform 0.3s, box-shadow 0.3s; }
+        .team-card:hover { transform: translateY(-5px); border-color: var(--color-accent); box-shadow: 0 5px 20px rgba(0, 255, 153, 0.2); }
+        .avatar { width: 100px; height: 100px; background: #333; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--color-accent); }
+        .name { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
+        .role { font-size: 0.9rem; color: #888; }
+        .about-h1 span { border-bottom: 3px solid var(--color-accent); }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .header-cta { font-size: 0.9rem; padding: 6px 12px; margin-left: auto; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <a href="index.html" class="logo">3D<span style="color:var(--color-accent)">.ai</span></a>
+        <div class="nav-group">
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html" style="opacity: 1; color: var(--color-accent);">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <a href="camera.html" class="header-cta">Enter Classroom</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="about-h1">Meet the <span>Team</span></h1>
+        
+        <div class="team-grid">
+            <div class="team-card"><div class="avatar">1</div><div class="name">phone</div><div class="role">Developer</div></div>
+            <div class="team-card"><div class="avatar">2</div><div class="name">น้ำหนึ่ง</div><div class="role">Designer</div></div>
+            <div class="team-card"><div class="avatar">3</div><div class="name">ploy</div><div class="role">AI Specialist</div></div>
+            <div class="team-card"><div class="avatar">4</div><div class="name">emmy</div><div class="role">Researcher</div></div>
+            <div class="team-card"><div class="avatar">5</div><div class="name">program</div><div class="role">Tester</div></div>
+            <div class="team-card"><div class="avatar">6</div><div class="name">i forgot her name</div><div class="role">Manager</div></div>
+        </div>
+    </div>
+</body>
+</html>
