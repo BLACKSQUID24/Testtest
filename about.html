@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- COPY CSS FROM INDEX.HTML HERE --- */
+        /* --- GLOBAL & UNIVERSAL STYLES --- */
         :root {
             --color-bg: #0a0a0a;
             --color-text-light: #F0F0F0;
@@ -23,6 +23,8 @@
             min-height: 100vh;
             background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.15) 0%, transparent 40%);
         }
+        
+        /* HEADER & NAV */
         .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border-subtle); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
         .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
         .nav-group { display: flex; align-items: center; }
@@ -37,17 +39,105 @@
         h1 span { color: var(--color-accent); }
 
         /* ABOUT US SPECIFIC STYLES */
-        .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
-        .team-card { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--color-border-subtle); padding: 30px; border-radius: 15px; transition: transform 0.3s, box-shadow 0.3s; }
-        .team-card:hover { transform: translateY(-5px); border-color: var(--color-accent); box-shadow: 0 5px 20px rgba(0, 255, 153, 0.2); }
-        .avatar { width: 100px; height: 100px; background: #333; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--color-accent); }
+        .team-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 30px; 
+            cursor: pointer; /* เพิ่ม cursor เพื่อบ่งบอกว่าคลิกได้ */
+        }
+        .team-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid var(--color-border-subtle); 
+            padding: 30px; 
+            border-radius: 15px; 
+            transition: transform 0.3s, box-shadow 0.3s; 
+        }
+        .team-card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--color-accent); 
+            box-shadow: 0 5px 20px rgba(0, 255, 153, 0.4); 
+        }
+        .avatar { 
+            width: 100px; height: 100px; background: #333; 
+            border-radius: 50%; margin: 0 auto 20px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 2rem; color: var(--color-accent); 
+        }
         .name { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
         .role { font-size: 0.9rem; color: #888; }
         .about-h1 span { border-bottom: 3px solid var(--color-accent); }
 
+        /* --- MODAL STYLES (New) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85); /* Black semi-transparent background */
+            backdrop-filter: blur(5px);
+            display: none; /* เริ่มต้นซ่อนไว้ */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--color-bg);
+            border: 2px solid var(--color-accent);
+            border-radius: 15px;
+            padding: 40px;
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 255, 153, 0.5); /* Glowing border */
+            transform: scale(0.9);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--color-accent);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: white;
+        }
+        
+        .modal-detail-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .modal-detail-list li {
+            padding: 10px 0;
+            border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-detail-list strong {
+            color: var(--color-accent);
+            display: inline-block;
+            width: 100px;
+        }
+
+
+        /* RESPONSIVE (Mobile) */
         @media (max-width: 768px) {
             .nav-links { display: none; }
             .header-cta { font-size: 0.9rem; padding: 6px 12px; margin-left: auto; }
+            .modal-content { padding: 25px; }
         }
     </style>
 </head>
@@ -69,13 +159,101 @@
         <h1 class="about-h1">Meet the <span>Team</span></h1>
         
         <div class="team-grid">
-            <div class="team-card"><div class="avatar">1</div><div class="name">phone</div><div class="role">Developer</div></div>
-            <div class="team-card"><div class="avatar">2</div><div class="name">น้ำหนึ่ง</div><div class="role">Designer</div></div>
-            <div class="team-card"><div class="avatar">3</div><div class="name">ploy</div><div class="role">AI Specialist</div></div>
-            <div class="team-card"><div class="avatar">4</div><div class="name">emmy</div><div class="role">Researcher</div></div>
-            <div class="team-card"><div class="avatar">5</div><div class="name">program</div><div class="role">Tester</div></div>
-            <div class="team-card"><div class="avatar">6</div><div class="name">i forgot her name</div><div class="role">Manager</div></div>
+            <!-- เพิ่ม data-id เพื่อให้ JS ดึงข้อมูลที่ตรงกัน -->
+            <div class="team-card" data-id="1"><div class="avatar">1</div><div class="name">waritsara</div><div class="role">Developer</div></div>
+            <div class="team-card" data-id="2"><div class="avatar">2</div><div class="name">Name 2</div><div class="role">Designer</div></div>
+            <div class="team-card" data-id="3"><div class="avatar">3</div><div class="name">Name 3</div><div class="role">AI Specialist</div></div>
+            <div class="team-card" data-id="4"><div class="avatar">4</div><div class="name">Name 4</div><div class="role">Researcher</div></div>
+            <div class="team-card" data-id="5"><div class="avatar">5</div><div class="name">Name 5</div><div class="role">Tester</div></div>
+            <div class="team-card" data-id="6"><div class="avatar">6</div><div class="name">Name 6</div><div class="role">Manager</div></div>
         </div>
     </div>
+    
+    <!-- --- PROFILE MODAL STRUCTURE --- -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn">&times;</button>
+            <div id="modal-avatar" class="avatar" style="margin-top: 0;"></div>
+            <h2 id="modal-name" class="name" style="font-size: 1.8rem;"></h2>
+            <p id="modal-role" class="role" style="font-size: 1.1rem; color: #ccc;"></p>
+            <p id="modal-detail" style="margin-top: 15px; opacity: 0.9;"></p>
+            
+            <ul class="modal-detail-list">
+                <li><strong>School:</strong> <span id="modal-school"></span></li>
+                <li><strong>Email:</strong> <span id="modal-email"></span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- --- JAVASCRIPT LOGIC --- -->
+    <script>
+        // 1. DATA: ข้อมูลโปรไฟล์โดยละเอียด
+        const teamData = [
+            { id: 1, name: 'waritsara', role: 'Developer', school: 'Chulalongkorn University', email: 'name1@project.com', detail: 'Passionate about sign language accessibility and front-end architecture.' },
+            { id: 2, name: 'Name 2', role: 'Designer', school: 'Silpakorn University', email: 'name2@project.com', detail: 'Focuses on clean, intuitive user interfaces and user experience research.' },
+            { id: 3, name: 'Name 3', role: 'AI Specialist', school: 'King Mongkuts University of Technology', email: 'name3@project.com', detail: 'Responsible for training and optimizing the sign language recognition model.' },
+            { id: 4, name: 'Name 4', role: 'Researcher', school: 'Kasetsart University', email: 'name4@project.com', detail: 'Conducts linguistic research on Thai Sign Language (TSL) integration.' },
+            { id: 5, name: 'Name 5', role: 'Tester', school: 'Mahidol University', email: 'name5@project.com', detail: 'Ensures system quality assurance and performs usability testing across devices.' },
+            { id: 6, name: 'natnicha', role: 'Manager', school: 'Thammasat University', email: 'name6@project.com', detail: 'Oversees project timelines, communication, and strategic product direction.' },
+        ];
+
+        // 2. DOM Elements
+        const modalOverlay = document.getElementById('profileModal');
+        const modalContent = document.querySelector('.modal-content');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const teamCards = document.querySelectorAll('.team-card');
+
+        // 3. EVENT LISTENERS
+        teamCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const teamId = parseInt(this.getAttribute('data-id'));
+                showProfile(teamId);
+            });
+        });
+
+        closeModalBtn.addEventListener('click', hideProfile);
+        
+        // ปิด modal เมื่อคลิกที่พื้นหลัง (overlay)
+        modalOverlay.addEventListener('click', function(event) {
+            // เช็คว่าคลิกตรง overlay จริงๆ ไม่ใช่คลิกภายใน modal-content
+            if (event.target === modalOverlay) {
+                hideProfile();
+            }
+        });
+
+
+        // 4. FUNCTIONS
+        function showProfile(id) {
+            const member = teamData.find(m => m.id === id);
+            if (!member) return;
+
+            // นำข้อมูลไปใส่ใน Modal
+            document.getElementById('modal-avatar').textContent = id;
+            document.getElementById('modal-name').textContent = member.name;
+            document.getElementById('modal-role').textContent = member.role;
+            document.getElementById('modal-detail').textContent = member.detail;
+            document.getElementById('modal-school').textContent = member.school;
+            document.getElementById('modal-email').textContent = member.email;
+
+            // แสดง Modal
+            modalOverlay.style.display = 'flex';
+            setTimeout(() => {
+                modalOverlay.classList.add('active');
+            }, 10);
+            
+            // ป้องกันไม่ให้ scroll ด้านหลัง (UX improvement)
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideProfile() {
+            modalOverlay.classList.remove('active');
+            // ซ่อนจริงๆ หลัง transition จบ
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+            }, 300); 
+            document.body.style.overflow = '';
+        }
+
+    </script>
 </body>
 </html>
