@@ -38,12 +38,12 @@
         h1 { font-size: 2.5rem; margin-bottom: 40px; }
         h1 span { color: var(--color-accent); }
 
-        /* ABOUT US SPECIFIC STYLES */
+        /* ABOUT US SPECIFIC STYLES - แก้ไข Avatar เพื่อรองรับรูปภาพ */
         .team-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
             gap: 30px; 
-            cursor: pointer; /* เพิ่ม cursor เพื่อบ่งบอกว่าคลิกได้ */
+            cursor: pointer; 
         }
         .team-card { 
             background: rgba(255, 255, 255, 0.05); 
@@ -57,23 +57,33 @@
             border-color: var(--color-accent); 
             box-shadow: 0 5px 20px rgba(0, 255, 153, 0.4); 
         }
-        .avatar { 
-            width: 100px; height: 100px; background: #333; 
-            border-radius: 50%; margin: 0 auto 20px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 2rem; color: var(--color-accent); 
+        .avatar {
+            width: 100px; 
+            height: 100px; 
+            margin: 0 auto 20px; 
+            border-radius: 50%;
+            overflow: hidden; 
         }
+        
+        .avatar-img { 
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            display: block;
+            border: 3px solid var(--color-accent); 
+        }
+        
         .name { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
         .role { font-size: 0.9rem; color: #888; }
         .about-h1 span { border-bottom: 3px solid var(--color-accent); }
 
-        /* --- MODAL STYLES (New) --- */
+        /* --- MODAL STYLES --- */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.85); /* Black semi-transparent background */
+            background: rgba(0, 0, 0, 0.85); 
             backdrop-filter: blur(5px);
-            display: none; /* เริ่มต้นซ่อนไว้ */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -87,7 +97,7 @@
             width: 90%;
             max-width: 450px;
             position: relative;
-            box-shadow: 0 0 40px rgba(0, 255, 153, 0.5); /* Glowing border */
+            box-shadow: 0 0 40px rgba(0, 255, 153, 0.5); 
             transform: scale(0.9);
             opacity: 0;
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
@@ -153,27 +163,45 @@
             </nav>
             <a href="camera.html" class="header-cta">Enter Classroom</a>
         </div>
-    </header>¬ø¬ø
+    </header>
 
     <div class="container">
         <h1 class="about-h1">Meet the <span>Team</span></h1>
         
         <div class="team-grid">
-            <!-- เพิ่ม data-id เพื่อให้ JS ดึงข้อมูลที่ตรงกัน -->
-            <div class="team-card" data-id="1"><div class="avatar">1</div><div class="name">Waritsara</div><div class="role">Leader</div></div>
-            <div class="team-card" data-id="2"><div class="avatar">2</div><div class="name">Supharerk</div><div class="role">Web</div></div>
-            <div class="team-card" data-id="3"><div class="avatar">3</div><div class="name">Sidarat</div><div class="role">AI Specialist</div></div>
-            <div class="team-card" data-id="4"><div class="avatar">4</div><div class="name">Tanaborde</div><div class="role">Researcher</div></div>
-            <div class="team-card" data-id="5"><div class="avatar">5</div><div class="name">Jhittimaporn</div><div class="role">Researcher</div></div>
-            <div class="team-card" data-id="6"><div class="avatar">6</div><div class="name">Natnicha</div><div class="role">Researcher</div></div>
+            <div class="team-card" data-id="1">
+                <div class="avatar"><img src="images/1.jpg" alt="Waritsara" class="avatar-img"></div>
+                <div class="name">Waritsara</div><div class="role">Leader</div>
+            </div>
+            <div class="team-card" data-id="2">
+                <div class="avatar"><img src="images/2.jpg" alt="phone" class="avatar-img"></div>
+                <div class="name">phone</div><div class="role">Web</div>
+            </div>
+            <div class="team-card" data-id="3">
+                <div class="avatar"><img src="images/3.jpg" alt="ploy" class="avatar-img"></div>
+                <div class="name">ploy</div><div class="role">AI Specialist</div>
+            </div>
+            <div class="team-card" data-id="4">
+                <div class="avatar"><img src="images/4.jpg" alt="program" class="avatar-img"></div>
+                <div class="name">program</div><div class="role">Researcher</div>
+            </div>
+            <div class="team-card" data-id="5">
+                <div class="avatar"><img src="images/5.jpg" alt="emmy" class="avatar-img"></div>
+                <div class="name">emmy</div><div class="role">Researcher</div>
+            </div>
+            <div class="team-card" data-id="6">
+                <div class="avatar"><img src="images/6.jpg" alt="Nicha" class="avatar-img"></div>
+                <div class="name">Nicha</div><div class="role">Researcher</div>
+            </div>
         </div>
     </div>
     
-    <!-- --- PROFILE MODAL STRUCTURE --- -->
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" id="closeModalBtn">&times;</button>
-            <div id="modal-avatar" class="avatar" style="margin-top: 0;"></div>
+            <div id="modal-avatar-container" class="avatar" style="margin-top: 0;">
+                <img id="modal-avatar-img" src="" alt="Profile Image" class="avatar-img">
+            </div>
             <h2 id="modal-name" class="name" style="font-size: 1.8rem;"></h2>
             <p id="modal-role" class="role" style="font-size: 1.1rem; color: #ccc;"></p>
             <p id="modal-detail" style="margin-top: 15px; opacity: 0.9;"></p>
@@ -185,23 +213,24 @@
         </div>
     </div>
 
-    <!-- --- JAVASCRIPT LOGIC --- -->
     <script>
         // 1. DATA: ข้อมูลโปรไฟล์โดยละเอียด
         const teamData = [
-            { id: 1, name: 'Waritsara Rakphakdee ', role: 'Leader', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'name1@project.com', detail: 'Passionate about sign language accessibility and front-end architecture.' },
-            { id: 2, name: 'Supharerk Charoenthim ', role: 'Web developer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'name2@project.com', detail: 'Focuses on clean, intuitive user interfaces and user experience research.' },
-            { id: 3, name: 'Sidarat Sawataur ', role: 'designer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'name3@project.com', detail: 'Responsible for training and optimizing the sign language recognition model.' },
-            { id: 4, name: 'Tanaborde Muangnumde', role: 'Web developer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'name4@project.com', detail: 'Conducts linguistic research on Thai Sign Language (TSL) integration.' },
-            { id: 5, name: 'Jhittimaporn  Hengjhitaku', role: 'Researcher', school: 'Triamudom Suksa Pattanakarn', email: 'name5@project.com', detail: 'Ensures system quality assurance and performs usability testing across devices.' },
-            { id: 6, name: 'Natnicha Bunsaard', role: ' researcher', school: 'Thammasat University', email: 'name6@project.com', detail: 'Oversees project timelines, communication, and strategic product direction.' },
+            { id: 1, name: 'Waritsara Rakphakdee ', role: 'Leader', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'namneungwaritsara@gmail.com', detail: 'Passionate about sign language accessibility and front-end architecture.', imagePath: 'images/1.jpg' },
+            { id: 2, name: 'Supharerk Charoenthim ', role: 'Web developer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: 'Supharerk333@gmail.com', detail: 'Focuses on clean, intuitive user interfaces and user experience research.', imagePath: 'images/2.jpg' },
+            { id: 3, name: 'Sidarat Sawataur ', role: 'designer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: '03829@tupp.ac.th', detail: 'Responsible for training and optimizing the sign language recognition model.', imagePath: 'images/3.jpg' },
+            { id: 4, name: 'Tanaborde Muangnumde', role: 'Web developer', school: 'Triamudom Suksa Pattanakarn Suvarnabhumi ', email: '03616@tupp.ac.th', detail: 'Conducts linguistic research on Thai Sign Language (TSL) integration.', imagePath: 'images/4.jpg' },
+            // *** อัปเดตข้อมูล ID 5 ให้สอดคล้องกับโครงสร้างและรูปภาพใหม่ ***
+            { id: 5, name: 'Jhittimaporn Hengjhitaku', role: 'Researcher', school: 'Triamudom Suksa Pattanakarn', email: 'Jhittiporn.j99999@gmail.com', detail: 'Ensures system quality assurance and performs usability testing across devices.', imagePath: 'images/5.jpg' },
+            // **********************************
+            { id: 6, name: 'Natnicha Bunsaard', role: ' Researcher', school: 'Petpitpayakom ', email: 'nicha0509@gmail.com', detail: 'Oversees project timelines, communication, and strategic product direction.', imagePath: 'images/6.jpg' },
         ];
 
         // 2. DOM Elements
         const modalOverlay = document.getElementById('profileModal');
-        const modalContent = document.querySelector('.modal-content');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const teamCards = document.querySelectorAll('.team-card');
+        const modalAvatarImg = document.getElementById('modal-avatar-img');
 
         // 3. EVENT LISTENERS
         teamCards.forEach(card => {
@@ -213,9 +242,7 @@
 
         closeModalBtn.addEventListener('click', hideProfile);
         
-        // ปิด modal เมื่อคลิกที่พื้นหลัง (overlay)
         modalOverlay.addEventListener('click', function(event) {
-            // เช็คว่าคลิกตรง overlay จริงๆ ไม่ใช่คลิกภายใน modal-content
             if (event.target === modalOverlay) {
                 hideProfile();
             }
@@ -227,8 +254,10 @@
             const member = teamData.find(m => m.id === id);
             if (!member) return;
 
-            // นำข้อมูลไปใส่ใน Modal
-            document.getElementById('modal-avatar').textContent = id;
+            // นำข้อมูลไปใส่ใน Modal (รวมถึงรูปภาพ)
+            modalAvatarImg.src = member.imagePath; 
+            modalAvatarImg.alt = member.name;
+            
             document.getElementById('modal-name').textContent = member.name;
             document.getElementById('modal-role').textContent = member.role;
             document.getElementById('modal-detail').textContent = member.detail;
@@ -241,13 +270,11 @@
                 modalOverlay.classList.add('active');
             }, 10);
             
-            // ป้องกันไม่ให้ scroll ด้านหลัง (UX improvement)
             document.body.style.overflow = 'hidden';
         }
 
         function hideProfile() {
             modalOverlay.classList.remove('active');
-            // ซ่อนจริงๆ หลัง transition จบ
             setTimeout(() => {
                 modalOverlay.style.display = 'none';
             }, 300); 
