@@ -3,238 +3,177 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Classroom - 3D for translate.ai</title>
+    <title>AI Classroom - Stabilized</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
     <style>
-        /* --- 1. CYBERPUNK THEME STYLES --- */
-        :root {
-            --color-bg: #0a0a0a;
-            --color-accent: #00FF99;
-            --glass-bg: rgba(20, 20, 20, 0.8);
-        }
-        
-        body { 
-            margin: 0; background-color: var(--color-bg); color: white; font-family: 'Prompt', sans-serif;
-            min-height: 100vh; display: flex; flex-direction: column;
-            background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.1) 0%, transparent 50%);
-        }
-
-        /* HEADER */
-        .header { 
-            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); background: var(--glass-bg);
-            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
-        }
+        /* --- STYLES --- */
+        :root { --color-bg: #0a0a0a; --color-accent: #00FF99; }
+        body { margin: 0; background-color: var(--color-bg); color: white; font-family: 'Prompt', sans-serif; min-height: 100vh; display: flex; flex-direction: column; background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.1) 0%, transparent 50%); }
+        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(20,20,20,0.8); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
         .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
         .back-btn { color: #888; text-decoration: none; }
-        .back-btn:hover { color: var(--color-accent); }
-
-        /* CAMERA CONTAINER */
-        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         
-        .video-box {
-            position: relative; width: 100%; max-width: 640px; aspect-ratio: 1/1;
-            background: black; border-radius: 20px; overflow: hidden;
-            border: 2px solid rgba(0, 255, 153, 0.3);
-            box-shadow: 0 0 30px rgba(0, 255, 153, 0.1);
-        }
-
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .video-box { position: relative; width: 100%; max-width: 640px; aspect-ratio: 1/1; background: black; border-radius: 20px; overflow: hidden; border: 2px solid rgba(0, 255, 153, 0.3); box-shadow: 0 0 30px rgba(0, 255, 153, 0.1); }
         video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         
-        /* OVERLAYS */
-        .loading-screen {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 20;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--color-accent);
-            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .hud {
-            position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 10;
-        }
-        .result-pill {
-            display: inline-block; background: rgba(0,0,0,0.8); border: 1px solid var(--color-accent);
-            padding: 10px 30px; border-radius: 50px; backdrop-filter: blur(5px);
-        }
+        .hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 10; }
+        .result-pill { display: inline-block; background: rgba(0,0,0,0.8); border: 1px solid var(--color-accent); padding: 10px 30px; border-radius: 50px; backdrop-filter: blur(5px); }
         .result-text { font-size: 2rem; font-weight: bold; color: var(--color-accent); display: block;}
         .conf-text { font-size: 0.8rem; color: #ccc; }
-
+        .loading-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--color-accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
     <header class="header">
         <a href="index.html" class="logo">3D<span style="color:var(--color-accent)">.ai</span></a>
-        <a href="index.html" class="back-btn">← Exit Classroom</a>
+        <a href="index.html" class="back-btn">← Exit</a>
     </header>
 
     <main class="main-content">
-        <h1 style="margin-bottom: 20px;">AI Sign <span style="color:var(--color-accent)">Detector</span></h1>
-        
+        <h1 style="margin-bottom: 20px;">AI Sign <span style="color:var(--color-accent)">Stabilized</span></h1>
         <div class="video-box">
-            <div id="loading" class="loading-screen">
-                <div class="spinner"></div>
-                <div>Loading AI Brain...</div>
-            </div>
-
+            <div id="loading" class="loading-screen"><div class="spinner"></div><div>Loading Smart Brain...</div></div>
             <video id="video" autoplay playsinline muted></video>
             <canvas id="canvas"></canvas>
-
             <div class="hud">
                 <div class="result-pill">
                     <span id="result-text" class="result-text">-</span>
-                    <span id="conf-text" class="conf-text">Waiting for gesture...</span>
+                    <span id="conf-text" class="conf-text">Waiting...</span>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // --- 2. CONFIGURATION (SETTINGS) ---
-        const MODEL_PATH = './model.onnx'; // Must match your file name!
-        const CONFIDENCE_THRESHOLD = 0.50; // 50% Confidence required
+        // --- SETTINGS ---
+        const MODEL_PATH = './model.onnx'; 
+        const CONFIDENCE_THRESHOLD = 0.45; // Lowered slightly to catch back-of-hand easier
         const LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
-        // Get Elements
+        // --- STABILIZER SETTINGS ---
+        const SMOOTHING_BUFFER_SIZE = 10; // Number of frames to average (higher = smoother but slower change)
+        let predictionBuffer = []; // Stores history of guesses
+
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const loading = document.getElementById('loading');
         const resText = document.getElementById('result-text');
         const confText = document.getElementById('conf-text');
-        
         let session;
 
-        // --- 3. START CAMERA ---
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: 640, height: 640 }
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 640 } });
                 video.srcObject = stream;
                 return new Promise(resolve => video.onloadedmetadata = resolve);
-            } catch (err) {
-                alert("Error opening camera: " + err.message);
-            }
+            } catch (err) { alert("Camera Error: " + err.message); }
         }
 
-        // --- 4. LOAD AI MODEL ---
         async function loadModel() {
             try {
-                // Initialize ONNX Runtime
                 session = await ort.InferenceSession.create(MODEL_PATH);
-                console.log("AI Model Loaded!");
-                loading.style.display = 'none'; // Hide loading screen
-                detectFrame(); // Start the loop
-            } catch (err) {
-                loading.innerHTML = `<span style="color:red">Error: Could not load model.onnx</span><br><small>${err.message}</small>`;
-            }
+                loading.style.display = 'none';
+                detectFrame();
+            } catch (err) { loading.innerHTML = `<span style="color:red">Error: ${err.message}</span>`; }
         }
 
-        // --- 5. DETECTION LOOP ---
         async function detectFrame() {
-            // Resize canvas to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            // 1. Draw video to hidden canvas context to extract data
             ctx.drawImage(video, 0, 0, 640, 640);
             const imgData = ctx.getImageData(0, 0, 640, 640);
-
-            // 2. Preprocess (Convert to Float32 & Normalize 0-255 -> 0.0-1.0)
             const input = new Float32Array(1 * 3 * 640 * 640);
             for (let i = 0; i < 640 * 640; i++) {
-                input[i] = imgData.data[i * 4] / 255.0;            // Red
-                input[i + 640 * 640] = imgData.data[i * 4 + 1] / 255.0;      // Green
-                input[i + 2 * 640 * 640] = imgData.data[i * 4 + 2] / 255.0;  // Blue
+                input[i] = imgData.data[i * 4] / 255.0;
+                input[i + 640 * 640] = imgData.data[i * 4 + 1] / 255.0;
+                input[i + 2 * 640 * 640] = imgData.data[i * 4 + 2] / 255.0;
             }
             const tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
-
-            // 3. Run Inference (Ask the AI)
             const results = await session.run({ images: tensor });
-            const output = results.output0.data; // The raw data from YOLO
-
-            // 4. Draw Boxes
-            drawBoxes(output);
-
-            // 5. Loop forever
+            drawBoxes(results.output0.data);
             requestAnimationFrame(detectFrame);
         }
 
-        // --- 6. DRAWING LOGIC ---
         function drawBoxes(data) {
-            // Clear previous drawings
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             const numClasses = LABELS.length;
-            const numAnchors = 8400; // Standard for YOLOv8
+            const numAnchors = 8400;
             
             let maxScore = 0;
-            let bestLabel = "-";
+            let currentFrameLabel = null;
+            let currentBox = null;
 
-            // Loop through all 8400 possible detections
             for (let i = 0; i < numAnchors; i++) {
-                // Find best class for this anchor
                 let classScore = 0;
                 let classId = -1;
-                
-                // Skip first 4 values (x,y,w,h)
                 for (let c = 0; c < numClasses; c++) {
                     const score = data[(4 + c) * numAnchors + i];
-                    if (score > classScore) {
-                        classScore = score;
-                        classId = c;
-                    }
+                    if (score > classScore) { classScore = score; classId = c; }
                 }
+                if (classScore > CONFIDENCE_THRESHOLD && classScore > maxScore) {
+                    maxScore = classScore;
+                    currentFrameLabel = LABELS[classId];
+                    // Save box coords to draw later
+                    currentBox = {
+                        x: data[0 * numAnchors + i], y: data[1 * numAnchors + i],
+                        w: data[2 * numAnchors + i], h: data[3 * numAnchors + i]
+                    };
+                }
+            }
 
-                if (classScore > CONFIDENCE_THRESHOLD) {
-                    const x = data[0 * numAnchors + i];
-                    const y = data[1 * numAnchors + i];
-                    const w = data[2 * numAnchors + i];
-                    const h = data[3 * numAnchors + i];
+            // --- STABILIZER LOGIC ---
+            if (currentFrameLabel) {
+                // Add to buffer
+                predictionBuffer.push(currentFrameLabel);
+                if (predictionBuffer.length > SMOOTHING_BUFFER_SIZE) predictionBuffer.shift();
 
-                    // Scale to current canvas size
+                // Find "Mode" (Most frequent label)
+                const counts = {};
+                let maxCount = 0;
+                let stableLabel = currentFrameLabel;
+                predictionBuffer.forEach(label => {
+                    counts[label] = (counts[label] || 0) + 1;
+                    if (counts[label] > maxCount) {
+                        maxCount = counts[label];
+                        stableLabel = label;
+                    }
+                });
+
+                // Draw Box (Green)
+                if (currentBox) {
                     const scaleX = canvas.width / 640;
                     const scaleY = canvas.height / 640;
-
-                    const left = (x - w / 2) * scaleX;
-                    const top = (y - h / 2) * scaleY;
-                    const width = w * scaleX;
-                    const height = h * scaleY;
-
-                    // Draw Box
+                    const left = (currentBox.x - currentBox.w / 2) * scaleX;
+                    const top = (currentBox.y - currentBox.h / 2) * scaleY;
+                    const width = currentBox.w * scaleX;
+                    const height = currentBox.h * scaleY;
+                    
                     ctx.strokeStyle = "#00FF99";
-                    ctx.lineWidth = 3;
+                    ctx.lineWidth = 4;
                     ctx.strokeRect(left, top, width, height);
-
-                    // Track the best result to show in HUD
-                    if (classScore > maxScore) {
-                        maxScore = classScore;
-                        bestLabel = LABELS[classId];
-                    }
                 }
-            }
 
-            // Update Text
-            if (maxScore > 0) {
-                resText.innerText = bestLabel;
-                confText.innerText = `${Math.round(maxScore * 100)}% Confidence`;
+                // Update Text with STABLE label
+                resText.innerText = stableLabel;
+                confText.innerText = `${Math.round(maxScore * 100)}% Sure`;
                 resText.style.color = "#00FF99";
             } else {
-                resText.innerText = "-";
-                confText.innerText = "Show hand...";
-                resText.style.color = "#555";
+                // If nothing detected for a while, clear buffer slowly
+                if(predictionBuffer.length > 0) predictionBuffer.shift();
+                if(predictionBuffer.length === 0) {
+                    resText.innerText = "-";
+                    confText.innerText = "Show hand...";
+                    resText.style.color = "#555";
+                }
             }
         }
-
-        // Start everything
         startCamera().then(loadModel);
-
     </script>
 </body>
 </html>
