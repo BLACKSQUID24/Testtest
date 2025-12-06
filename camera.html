@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASL Decoder - 3D for translate.ai</title>
+    <title>ASL Decoder - Dual Hand Support</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- GLOBAL THEME (Copied from index.html) --- */
+        /* --- GLOBAL THEME --- */
         :root {
             --color-bg: #0a0a0a;
             --color-text-light: #F0F0F0;
             --color-accent: #00FF99;
-            --color-accent-hover: #00E688;
             --color-border-subtle: rgba(255, 255, 255, 0.1);
         }
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
@@ -24,13 +23,12 @@
             background-color: var(--color-bg); 
             color: var(--color-text-light); 
             min-height: 100vh;
-            /* Background Glow */
             background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.15) 0%, transparent 40%);
             display: flex;
             flex-direction: column;
         }
 
-        /* --- HEADER (Copied from index.html) --- */
+        /* --- HEADER --- */
         .header { 
             padding: 15px 30px; 
             display: flex; 
@@ -44,14 +42,9 @@
             background: rgba(10, 10, 10, 0.8);
         }
         .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
-        .nav-group { display: flex; align-items: center; }
-        .nav-links { display: flex; gap: 25px; }
-        .nav-links a { color: var(--color-text-light); text-decoration: none; font-size: 1rem; opacity: 0.8; transition: opacity 0.2s; text-transform: capitalize; }
-        .nav-links a:hover { opacity: 1; color: var(--color-accent); }
-        .header-cta { background-color: var(--color-accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-left: 25px; transition: all 0.3s; }
-        .header-cta:hover { background-color: var(--color-accent-hover); transform: translateY(-1px); }
+        .header-cta { background-color: var(--color-accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-left: 25px; }
 
-        /* --- CAMERA UI SPECIFIC --- */
+        /* --- CAMERA UI --- */
         .container { 
             width: 100%;
             max-width: 900px; 
@@ -70,7 +63,6 @@
             opacity: 0.8;
         }
 
-        /* Video Frame styled like the Team Cards */
         .main-display {
             position: relative;
             width: 100%;
@@ -82,20 +74,15 @@
             box-shadow: 0 0 30px rgba(0, 255, 153, 0.1);
             background: #000;
             aspect-ratio: 4/3;
-            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-        .main-display:hover {
-            border-color: var(--color-accent);
-            box-shadow: 0 0 40px rgba(0, 255, 153, 0.2);
-        }
-        
+        /* Mirror the video so it feels natural for the user */
         video, canvas {
             display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
+            transform: scaleX(-1); 
         }
         
         canvas {
@@ -104,7 +91,21 @@
             left: 0;
         }
 
-        /* HUD Panels (Stats) */
+        /* Hand Indicator Tag */
+        .hand-tag {
+            position: absolute;
+            top: 20px;
+            right: 20px; /* Appears on left due to mirror */
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--color-accent);
+            color: var(--color-accent);
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
         .hud-panel {
             margin-top: 30px;
             display: grid;
@@ -121,14 +122,8 @@
             border-radius: 15px;
             text-align: left;
             border: 1px solid var(--color-border-subtle);
-            transition: transform 0.3s;
         }
         
-        .card:hover {
-            border-color: var(--color-accent);
-            transform: translateY(-2px);
-        }
-
         .card-label {
             font-size: 0.85rem;
             color: #888;
@@ -145,7 +140,6 @@
             line-height: 1;
         }
 
-        /* Progress Bar */
         #confidence-bar {
             height: 6px;
             background: rgba(255, 255, 255, 0.1);
@@ -172,7 +166,7 @@
 
         .clear-btn {
             background: transparent;
-            color: #ef4444; /* Red for delete action */
+            color: #ef4444;
             border: 1px solid rgba(239, 68, 68, 0.5);
             padding: 12px 30px;
             border-radius: 50px;
@@ -180,24 +174,11 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 30px;
-            font-size: 1rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
         }
+        .clear-btn:hover { background: #ef4444; color: white; }
 
-        .clear-btn:hover {
-            background: #ef4444;
-            color: white;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Responsive Mobile */
         @media (max-width: 768px) {
-            .nav-links { display: none; }
-            .header-cta { margin-left: auto; }
             .hud-panel { grid-template-columns: 1fr; }
-            h1 { font-size: 2rem; }
         }
     </style>
 </head>
@@ -205,25 +186,19 @@
 <body>
     <header class="header">
         <a href="index.html" class="logo">3D<span style="color:var(--color-accent)">.ai</span></a>
-        <div class="nav-group">
-            <nav class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="contact.html">Contact</a>
-            </nav>
-            <a href="camera.html" class="header-cta" style="background-color: var(--color-text-light); color: black;">Active Camera</a>
-        </div>
+        <a href="camera.html" class="header-cta" style="background-color: var(--color-text-light); color: black;">Active Camera</a>
     </header>
 
     <div class="container">
         <h1>ASL <span>Decoder</span></h1>
         <div class="hint">
-            <i class="fas fa-hand-paper"></i> Use your <b>Right Hand</b>. Hold steady for 1.5s to type.
+            <i class="fas fa-hand-paper"></i> Supports <b>Left & Right</b> Hands. Hold gesture to type.
         </div>
 
         <div class="main-display">
             <video id="video" playsinline></video>
             <canvas id="output"></canvas>
+            <div id="hand-indicator" class="hand-tag">NO HAND</div>
         </div>
 
         <div class="hud-panel">
@@ -235,7 +210,6 @@
             <div class="card">
                 <div class="card-label">Typed Message</div>
                 <div class="big-text"><span id="word-display">_</span></div>
-                <div style="font-size: 0.8rem; color: #888; margin-top:5px;">(Perform gestures to build words)</div>
             </div>
         </div>
         
@@ -255,52 +229,73 @@
         const gestureDisplay = document.getElementById("gesture");
         const wordDisplay = document.getElementById("word-display");
         const confidenceFill = document.getElementById("confidence-fill");
+        const handIndicator = document.getElementById("hand-indicator");
 
-        let lastLetter = "";
         let holdStartTime = 0;
-        const HOLD_DURATION = 1500; // ms to type a letter
+        const HOLD_DURATION = 1000; 
+        const STABILITY_THRESHOLD = 8; 
+        
+        let currentStableLetter = "-";
+        let lastRawLetter = "-";
+        let consecutiveFrames = 0;
 
         function onResults(results) {
-            // Resize canvas to match video
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
-
             ctx.save();
             ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
-            // Draw video frame
             ctx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
+                
+                // 1. Detect Handedness (Left vs Right)
+                // Note: MediaPipe assumes mirror image. 'Left' often implies the user's right hand in selfie mode.
+                // We use the label to switch our math logic.
+                const handLabel = results.multiHandedness[0].label; 
+                handIndicator.innerText = handLabel === "Left" ? "Right Hand" : "Left Hand"; // Visual swap for user clarity
 
-                // Draw skeleton with Theme Colors (Green and White)
-                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 2 });
-                drawLandmarks(ctx, landmarks, { color: '#FFFFFF', lineWidth: 1, radius: 4 });
+                // Draw Skeleton
+                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 3 });
+                drawLandmarks(ctx, landmarks, { color: '#ffffff', lineWidth: 1, radius: 4 });
 
-                // --- ASL LOGIC ---
-                const letter = recognizeASL(landmarks);
-                gestureDisplay.innerText = letter;
+                // 2. Recognize
+                const rawLetter = recognizeASLGeometric(landmarks, handLabel);
 
-                // Typing Logic
-                if (letter !== "-" && letter === lastLetter) {
-                    const duration = Date.now() - holdStartTime;
-                    const progress = Math.min((duration / HOLD_DURATION) * 100, 100);
-                    confidenceFill.style.width = progress + "%";
-
-                    if (duration > HOLD_DURATION) {
-                        typeLetter(letter);
-                        holdStartTime = Date.now(); // Reset
-                    }
+                // 3. Stabilize
+                if (rawLetter === lastRawLetter) {
+                    consecutiveFrames++;
                 } else {
-                    lastLetter = letter;
-                    holdStartTime = Date.now();
-                    confidenceFill.style.width = "0%";
+                    consecutiveFrames = 0;
+                    lastRawLetter = rawLetter;
                 }
 
+                if (consecutiveFrames > STABILITY_THRESHOLD) {
+                    if (rawLetter !== currentStableLetter) {
+                        currentStableLetter = rawLetter;
+                        gestureDisplay.innerText = currentStableLetter;
+                        holdStartTime = Date.now(); 
+                        confidenceFill.style.width = "0%";
+                    } else if (currentStableLetter !== "-") {
+                        const duration = Date.now() - holdStartTime;
+                        const progress = Math.min((duration / HOLD_DURATION) * 100, 100);
+                        confidenceFill.style.width = progress + "%";
+
+                        if (duration > HOLD_DURATION) {
+                            typeLetter(currentStableLetter);
+                            holdStartTime = Date.now(); 
+                            confidenceFill.style.width = "0%";
+                            // Flash effect
+                            gestureDisplay.style.color = "white";
+                            setTimeout(() => gestureDisplay.style.color = "var(--color-accent)", 200);
+                        }
+                    }
+                }
             } else {
                 gestureDisplay.innerText = "-";
+                handIndicator.innerText = "NO HAND";
                 confidenceFill.style.width = "0%";
+                consecutiveFrames = 0;
             }
             ctx.restore();
         }
@@ -311,49 +306,75 @@
             wordDisplay.innerText = currentText + char;
         }
 
-        // --- SIMPLE GEOMETRY BASED RECOGNITION ---
-        function recognizeASL(lm) {
-            const isOpen = (tipIdx, pipIdx) => lm[tipIdx].y < lm[pipIdx].y;
-            const isThumbOpen = (lm[4].x < lm[3].x); 
-            const indexOpen = isOpen(8, 6);
-            const middleOpen = isOpen(12, 10);
-            const ringOpen = isOpen(16, 14);
-            const pinkyOpen = isOpen(20, 18);
+        // --- GEOMETRY RECOGNITION (Left/Right Compatible) ---
+        function recognizeASLGeometric(lm, handLabel) {
+            // 1. Finger States (Extended vs Bent)
+            const getAngle = (a, b, c) => {
+                const ang = (Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x)) * (180 / Math.PI);
+                return Math.abs(ang) > 180 ? 360 - Math.abs(ang) : Math.abs(ang);
+            };
 
-            let fingersUp = 0;
-            if (indexOpen) fingersUp++;
-            if (middleOpen) fingersUp++;
-            if (ringOpen) fingersUp++;
-            if (pinkyOpen) fingersUp++;
+            const isExtended = (idx) => getAngle(lm[idx], lm[idx+1], lm[idx+2]) > 140;
 
-            const dist = (i1, i2) => Math.sqrt(Math.pow(lm[i1].x - lm[i2].x, 2) + Math.pow(lm[i1].y - lm[i2].y, 2));
+            // 2. Thumb Logic (Chirality Dependent)
+            // If Hand is 'Left' (from MediaPipe), X coordinates increase to the right.
+            // If Hand is 'Right', X coordinates increase to the right.
+            // But the thumb is on different sides.
+            
+            let thumbExtended = false;
+            
+            // Note: MediaPipe labels are often 'Left' for physical Right hand in selfie mode.
+            // We use specific relative checks.
+            // 'Left' label means Palm Facing Camera -> Thumb is on the Right side (larger X)
+            // 'Right' label means Palm Facing Camera -> Thumb is on the Left side (smaller X)
+            
+            if (handLabel === 'Left') { 
+                // This is usually the User's Right Hand in Mirror Mode
+                // Thumb is 'Out' if its X is LESS than the Index MCP X (to the left of the hand)
+                thumbExtended = (lm[4].x < lm[5].x); 
+            } else {
+                // This is the User's Left Hand
+                // Thumb is 'Out' if its X is GREATER than Index MCP X (to the right of the hand)
+                thumbExtended = (lm[4].x > lm[5].x);
+            }
+            
+            // Backup check: lateral distance (hand agnostic) for 'wide' thumbs
+            const thumbLatDist = Math.abs(lm[4].x - lm[9].x);
+            if (thumbLatDist > 0.15) thumbExtended = true; 
 
-            if (fingersUp === 0 && dist(4, 6) < 0.1) return "A";
-            if (fingersUp === 4 && !isThumbOpen) return "B";
-            if (fingersUp === 4 && dist(4, 8) < 0.2 && dist(8, 12) > 0.05) return "C";
-            if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen && dist(4, 12) < 0.1) return "D";
-            if (fingersUp === 0 && dist(4, 8) < 0.1) return "E";
-            if (!indexOpen && middleOpen && ringOpen && pinkyOpen && dist(4, 8) < 0.1) return "F";
-            if (!indexOpen && !middleOpen && !ringOpen && pinkyOpen) return "I";
-            if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen && isThumbOpen) return "L";
-            if (dist(4, 8) < 0.1 && dist(4, 12) < 0.1 && !indexOpen && !middleOpen) return "O";
-            if (indexOpen && middleOpen && !ringOpen && !pinkyOpen && dist(8, 12) < 0.06) return "U";
-            if (indexOpen && middleOpen && !ringOpen && !pinkyOpen && dist(8, 12) > 0.06) return "V";
-            if (indexOpen && middleOpen && ringOpen && !pinkyOpen) return "W";
-            if (isThumbOpen && !indexOpen && !middleOpen && !ringOpen && pinkyOpen) return "Y";
-            if (fingersUp === 4 && isThumbOpen) return " "; 
+            const f = [thumbExtended, isExtended(5), isExtended(9), isExtended(13), isExtended(17)];
+            
+            // Distances
+            const d_thumb_index = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+            
+            // --- LOGIC TREE ---
+            if (!f[1] && !f[2] && !f[3] && !f[4] && !f[0]) return "A";
+            if (f[1] && f[2] && f[3] && f[4] && !f[0]) return "B";
+            if (f[1] && !f[2] && !f[3] && !f[4]) return "D"; // D: Index Up
+            if (!f[1] && !f[2] && !f[3] && !f[4] && thumbLatDist < 0.1 && d_thumb_index < 0.1) return "E";
+            if (!f[1] && f[2] && f[3] && f[4] && d_thumb_index < 0.08) return "F"; // F: OK Sign
+            if (!f[1] && !f[2] && !f[3] && f[4]) return "I";
+            if (f[0] && f[1] && !f[2] && !f[3] && !f[4]) return "L";
+            if (!f[1] && !f[2] && d_thumb_index < 0.1 && lm[8].y > lm[6].y) return "O";
+            if (f[1] && f[2] && !f[3] && !f[4]) {
+                 // Distinguish U (together) vs V (apart) vs W (three)
+                 const distUV = Math.hypot(lm[8].x - lm[12].x, lm[8].y - lm[12].y);
+                 if (distUV < 0.05) return "U";
+                 return "V";
+            }
+            if (f[1] && f[2] && f[3] && !f[4]) return "W";
+            if (f[0] && !f[1] && !f[2] && !f[3] && f[4]) return "Y";
+            if (f[0] && f[1] && f[2] && f[3] && f[4]) return " ";
 
-            return "-"; 
+            return "-";
         }
 
-        const hands = new Hands({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-        });
+        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.7,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
         });
         hands.onResults(onResults);
 
