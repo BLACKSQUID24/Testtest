@@ -1,61 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="th">
 <head>
     <meta charset="UTF-8" />
-    <title>ASL Alphabet Decoder (Web Version)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Decoder - 3D for translate.ai</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* --- GLOBAL THEME (Copied from index.html) --- */
+        :root {
+            --color-bg: #0a0a0a;
+            --color-text-light: #F0F0F0;
+            --color-accent: #00FF99;
+            --color-accent-hover: #00E688;
+            --color-border-subtle: rgba(255, 255, 255, 0.1);
         }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         
-        body {
-            margin: 0;
-            background: #0f172a;
-            color: #fff;
+        body { 
+            margin: 0; 
+            background-color: var(--color-bg); 
+            color: var(--color-text-light); 
+            min-height: 100vh;
+            /* Background Glow */
+            background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 153, 0.15) 0%, transparent 40%);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+        }
+
+        /* --- HEADER (Copied from index.html) --- */
+        .header { 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--color-border-subtle); 
+            backdrop-filter: blur(10px); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            background: rgba(10, 10, 10, 0.8);
+        }
+        .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
+        .nav-group { display: flex; align-items: center; }
+        .nav-links { display: flex; gap: 25px; }
+        .nav-links a { color: var(--color-text-light); text-decoration: none; font-size: 1rem; opacity: 0.8; transition: opacity 0.2s; text-transform: capitalize; }
+        .nav-links a:hover { opacity: 1; color: var(--color-accent); }
+        .header-cta { background-color: var(--color-accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-left: 25px; transition: all 0.3s; }
+        .header-cta:hover { background-color: var(--color-accent-hover); transform: translateY(-1px); }
+
+        /* --- CAMERA UI SPECIFIC --- */
+        .container { 
+            width: 100%;
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            text-align: center; 
         }
         
-        .container {
-            width: 95%;
-            max-width: 800px;
-            text-align: center;
-            padding-top: 20px;
-        }
-        
-        h1 {
-            margin: 0;
-            background: linear-gradient(90deg, #4ade80, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2rem;
-            letter-spacing: 1px;
-        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; margin-top: 0; }
+        h1 span { color: var(--color-accent); }
         
         .hint {
-            color: #94a3b8;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            opacity: 0.8;
         }
-        
+
+        /* Video Frame styled like the Team Cards */
         .main-display {
             position: relative;
             width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
-            border: 2px solid #334155;
+            border: 2px solid var(--color-border-subtle);
+            box-shadow: 0 0 30px rgba(0, 255, 153, 0.1);
             background: #000;
+            aspect-ratio: 4/3;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .main-display:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 40px rgba(0, 255, 153, 0.2);
         }
         
         video, canvas {
             display: block;
             width: 100%;
-            transform: scaleX(-1); /* Mirror effect for natural feeling */
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect */
         }
         
         canvas {
@@ -64,62 +104,122 @@
             left: 0;
         }
 
+        /* HUD Panels (Stats) */
         .hud-panel {
-            margin-top: 20px;
+            margin-top: 30px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .card {
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
             text-align: left;
-            border: 1px solid #334155;
+            border: 1px solid var(--color-border-subtle);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-2px);
         }
 
         .card-label {
-            font-size: 0.8rem;
-            color: #94a3b8;
+            font-size: 0.85rem;
+            color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
         }
 
         .big-text {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #4ade80;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            line-height: 1;
         }
 
+        /* Progress Bar */
         #confidence-bar {
-            height: 4px;
-            background: #334155;
-            margin-top: 10px;
-            border-radius: 2px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 15px;
+            border-radius: 10px;
             overflow: hidden;
         }
 
         #confidence-fill {
             height: 100%;
             width: 0%;
-            background: #4ade80;
-            transition: width 0.1s;
+            background: var(--color-accent);
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--color-accent);
         }
 
         #word-display {
             font-family: 'Courier New', monospace;
-            color: #fbbf24;
+            color: #fff;
+            border-bottom: 2px solid var(--color-accent);
+            display: inline-block;
+            min-width: 20px;
         }
 
+        .clear-btn {
+            background: transparent;
+            color: #ef4444; /* Red for delete action */
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .header-cta { margin-left: auto; }
+            .hud-panel { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+        }
     </style>
 </head>
 
 <body>
+    <header class="header">
+        <a href="index.html" class="logo">3D<span style="color:var(--color-accent)">.ai</span></a>
+        <div class="nav-group">
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About Us</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <a href="camera.html" class="header-cta" style="background-color: var(--color-text-light); color: black;">Active Camera</a>
+        </div>
+    </header>
+
     <div class="container">
-        <h1>ASL Alphabet Decoder</h1>
-        <div class="hint">Use your <b>Right Hand</b>. Hold steady to type.</div>
+        <h1>ASL <span>Decoder</span></h1>
+        <div class="hint">
+            <i class="fas fa-hand-paper"></i> Use your <b>Right Hand</b>. Hold steady for 1.5s to type.
+        </div>
 
         <div class="main-display">
             <video id="video" playsinline></video>
@@ -134,12 +234,14 @@
             </div>
             <div class="card">
                 <div class="card-label">Typed Message</div>
-                <div id="word-display" class="big-text">_</div>
-                <div style="font-size: 0.8rem; color: #64748b; margin-top:5px;">(Hold letter for 1.5s to type)</div>
+                <div class="big-text"><span id="word-display">_</span></div>
+                <div style="font-size: 0.8rem; color: #888; margin-top:5px;">(Perform gestures to build words)</div>
             </div>
         </div>
-        <br>
-        <button onclick="document.getElementById('word-display').innerText='_'" style="padding:10px 20px; background:#ef4444; color:white; border:none; border-radius:8px; cursor:pointer;">Clear Text</button>
+        
+        <button onclick="document.getElementById('word-display').innerText='_'" class="clear-btn">
+            <i class="fas fa-trash-alt"></i> Clear Text
+        </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
@@ -170,16 +272,14 @@
             ctx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                // Get the first hand detected
                 const landmarks = results.multiHandLandmarks[0];
 
-                // Draw skeleton
-                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
-                drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 1, radius: 3 });
+                // Draw skeleton with Theme Colors (Green and White)
+                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 2 });
+                drawLandmarks(ctx, landmarks, { color: '#FFFFFF', lineWidth: 1, radius: 4 });
 
-                // --- ASL LOGIC START ---
+                // --- ASL LOGIC ---
                 const letter = recognizeASL(landmarks);
-                
                 gestureDisplay.innerText = letter;
 
                 // Typing Logic
@@ -197,7 +297,6 @@
                     holdStartTime = Date.now();
                     confidenceFill.style.width = "0%";
                 }
-                // --- ASL LOGIC END ---
 
             } else {
                 gestureDisplay.innerText = "-";
@@ -212,100 +311,57 @@
             wordDisplay.innerText = currentText + char;
         }
 
-        // --- THE GEOMETRY BRAIN ---
+        // --- SIMPLE GEOMETRY BASED RECOGNITION ---
         function recognizeASL(lm) {
-            // Helper to check if finger is open (tip above PIP joint)
-            // Note: Y coordinates go DOWN in computer vision. Smaller Y = Higher up.
             const isOpen = (tipIdx, pipIdx) => lm[tipIdx].y < lm[pipIdx].y;
-            
-            // For thumb, we check X distance mostly
-            const isThumbOpen = (lm[4].x < lm[3].x); // Assumes Right Hand facing camera
-
+            const isThumbOpen = (lm[4].x < lm[3].x); 
             const indexOpen = isOpen(8, 6);
             const middleOpen = isOpen(12, 10);
             const ringOpen = isOpen(16, 14);
             const pinkyOpen = isOpen(20, 18);
 
-            // Count fingers up (excluding thumb)
             let fingersUp = 0;
             if (indexOpen) fingersUp++;
             if (middleOpen) fingersUp++;
             if (ringOpen) fingersUp++;
             if (pinkyOpen) fingersUp++;
 
-            // Distances for detailed checks
             const dist = (i1, i2) => Math.sqrt(Math.pow(lm[i1].x - lm[i2].x, 2) + Math.pow(lm[i1].y - lm[i2].y, 2));
 
-            // --- RULES ---
-            
-            // A: Fist, Thumb on side
             if (fingersUp === 0 && dist(4, 6) < 0.1) return "A";
-            
-            // B: 4 fingers up, thumb tucked
             if (fingersUp === 4 && !isThumbOpen) return "B";
-
-            // C: Curved hand (All fingers slightly open but curved)
-            // Hard to detect perfectly in 2D, approximations:
             if (fingersUp === 4 && dist(4, 8) < 0.2 && dist(8, 12) > 0.05) return "C";
-
-            // D: Index up, others curled, thumb touches middle
             if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen && dist(4, 12) < 0.1) return "D";
-
-            // E: All fingers curled, thumb tucked in
             if (fingersUp === 0 && dist(4, 8) < 0.1) return "E";
-
-            // F: OK Sign (Index+Thumb touch, others up)
             if (!indexOpen && middleOpen && ringOpen && pinkyOpen && dist(4, 8) < 0.1) return "F";
-
-            // I: Pinky up
             if (!indexOpen && !middleOpen && !ringOpen && pinkyOpen) return "I";
-
-            // L: Index and Thumb form L
             if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen && isThumbOpen) return "L";
-
-            // O: Fingers curled touching thumb (circle)
             if (dist(4, 8) < 0.1 && dist(4, 12) < 0.1 && !indexOpen && !middleOpen) return "O";
-
-            // U: Index + Middle straight up together
             if (indexOpen && middleOpen && !ringOpen && !pinkyOpen && dist(8, 12) < 0.06) return "U";
-
-            // V: Index + Middle up, spread apart
             if (indexOpen && middleOpen && !ringOpen && !pinkyOpen && dist(8, 12) > 0.06) return "V";
-
-            // W: 3 fingers up
             if (indexOpen && middleOpen && ringOpen && !pinkyOpen) return "W";
-
-            // Y: Thumb + Pinky up (Hang loose)
             if (isThumbOpen && !indexOpen && !middleOpen && !ringOpen && pinkyOpen) return "Y";
+            if (fingersUp === 4 && isThumbOpen) return " "; 
 
-            // 5 / Open Palm
-            if (fingersUp === 4 && isThumbOpen) return " "; // Space
-
-            return "-"; // Unknown
+            return "-"; 
         }
 
-        // Setup MediaPipe
         const hands = new Hands({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
         });
-
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
             minDetectionConfidence: 0.7,
             minTrackingConfidence: 0.7,
         });
-
         hands.onResults(onResults);
 
         const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({ image: videoElement });
-            },
+            onFrame: async () => { await hands.send({ image: videoElement }); },
             width: 640,
             height: 480,
         });
-
         camera.start();
     </script>
 </body>
