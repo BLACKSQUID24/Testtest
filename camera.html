@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASL Decoder - High Precision v2</title>
+    <title>ASL Pro Decoder - High Precision v3</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- GLOBAL THEME --- */
         :root {
             --color-bg: #0a0a0a;
             --color-text-light: #F0F0F0;
@@ -28,7 +27,6 @@
             flex-direction: column;
         }
 
-        /* --- HEADER --- */
         .header { 
             padding: 15px 30px; 
             display: flex; 
@@ -42,9 +40,26 @@
             background: rgba(10, 10, 10, 0.8);
         }
         .logo { font-weight: bold; color: white; text-decoration: none; font-size: 1.2rem; }
-        .header-cta { background-color: var(--color-accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; margin-left: 25px; }
+        .logo span { color: var(--color-accent); }
+        .header-status { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            color: #888; 
+            font-size: 0.9rem;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--color-accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
 
-        /* --- CAMERA UI --- */
         .container { 
             width: 100%;
             max-width: 900px; 
@@ -76,7 +91,6 @@
             aspect-ratio: 4/3;
         }
 
-        /* Mirror the video */
         video, canvas {
             display: block;
             width: 100%;
@@ -91,11 +105,10 @@
             left: 0;
         }
 
-        /* Hand Indicator Tag */
         .hand-tag {
             position: absolute;
             top: 20px;
-            right: 20px; /* Appears on left due to mirror */
+            right: 20px;
             background: rgba(0,0,0,0.6);
             padding: 5px 12px;
             border-radius: 20px;
@@ -104,6 +117,11 @@
             font-size: 0.8rem;
             font-weight: bold;
             text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .hand-tag.no-hand {
+            border-color: #666;
+            color: #888;
         }
 
         .hud-panel {
@@ -138,21 +156,39 @@
             font-weight: 700;
             color: var(--color-accent);
             line-height: 1;
+            transition: all 0.2s;
+        }
+        .big-text.inactive {
+            color: #666;
+        }
+        .big-text.glow {
+            text-shadow: 0 0 20px var(--color-accent);
         }
 
-        #confidence-bar {
+        .progress-section {
+            margin-top: 15px;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .progress-bar {
             height: 6px;
             background: rgba(255, 255, 255, 0.1);
-            margin-top: 15px;
             border-radius: 10px;
             overflow: hidden;
         }
-
-        #confidence-fill {
+        .progress-fill {
             height: 100%;
             width: 0%;
             background: var(--color-accent);
             transition: width 0.1s linear;
+            border-radius: 10px;
+        }
+        .progress-fill.active {
             box-shadow: 0 0 10px var(--color-accent);
         }
 
@@ -162,9 +198,9 @@
             border-bottom: 2px solid var(--color-accent);
             display: inline-block;
             min-width: 20px;
+            word-break: break-all;
         }
 
-        /* --- ACTION BUTTONS --- */
         .action-bar {
             display: flex;
             justify-content: center;
@@ -201,42 +237,66 @@
 
         @media (max-width: 768px) {
             .hud-panel { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+            .big-text { font-size: 2.5rem; }
         }
     </style>
 </head>
 
 <body>
     <header class="header">
-        <a href="index.html" class="logo">3D<span style="color:var(--color-accent)">.ai</span></a>
-        <a href="camera.html" class="header-cta" style="background-color: var(--color-text-light); color: black;">Active Camera</a>
+        <a href="#" class="logo">ASL<span>.decoder</span></a>
+        <div class="header-status">
+            <div class="status-dot"></div>
+            <span>Live</span>
+        </div>
     </header>
 
     <div class="container">
         <h1>ASL <span>Pro Decoder</span></h1>
         <div class="hint">
-            <i class="fas fa-hand-paper"></i> Hold gesture for 1 second to type.
+            <i class="fas fa-hand-paper"></i> Hold gesture for 1.2 seconds to type • A-Z supported
         </div>
 
         <div class="main-display">
             <video id="video" playsinline></video>
             <canvas id="output"></canvas>
-            <div id="hand-indicator" class="hand-tag">NO HAND</div>
+            <div id="hand-indicator" class="hand-tag no-hand">NO HAND</div>
         </div>
 
         <div class="hud-panel">
             <div class="card">
                 <div class="card-label">Detected Letter</div>
-                <div id="gesture" class="big-text">-</div>
-                <div id="confidence-bar"><div id="confidence-fill"></div></div>
+                <div id="gesture" class="big-text inactive">-</div>
+                
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Confidence</span>
+                        <span id="conf-percent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="confidence-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Hold to Type</span>
+                        <span id="hold-percent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="hold-fill" class="progress-fill"></div>
+                    </div>
+                </div>
             </div>
             <div class="card">
                 <div class="card-label">Typed Message</div>
-                <div class="big-text"><span id="word-display">_</span></div>
+                <div class="big-text" style="color: #fff;"><span id="word-display">_</span></div>
             </div>
         </div>
         
         <div class="action-bar">
-            <button onclick="document.getElementById('word-display').innerText='_'" class="btn clear-btn">
+            <button onclick="clearText()" class="btn clear-btn">
                 <i class="fas fa-trash-alt"></i> Clear Text
             </button>
             <button onclick="exitSession()" class="btn exit-btn">
@@ -250,34 +310,550 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
     <script>
+        // =============================================
+        //  DOM ELEMENTS
+        // =============================================
         const videoElement = document.getElementById("video");
         const canvasElement = document.getElementById("output");
         const ctx = canvasElement.getContext("2d");
         const gestureDisplay = document.getElementById("gesture");
         const wordDisplay = document.getElementById("word-display");
         const confidenceFill = document.getElementById("confidence-fill");
+        const holdFill = document.getElementById("hold-fill");
+        const confPercent = document.getElementById("conf-percent");
+        const holdPercent = document.getElementById("hold-percent");
         const handIndicator = document.getElementById("hand-indicator");
 
-        let holdStartTime = 0;
-        const HOLD_DURATION = 1000; // ms
-        const STABILITY_THRESHOLD = 8; // Increased for better stability
-        
-        let currentStableLetter = "-";
-        let lastRawLetter = "-";
-        let consecutiveFrames = 0;
+        // =============================================
+        //  CONFIGURATION
+        // =============================================
+        const HOLD_DURATION = 1200; // ms
+        const STABILITY_WINDOW = 15;
+        const REQUIRED_CONSENSUS = 0.55;
+        const SMOOTHER_WINDOW = 5;
+        const SMOOTHER_ALPHA = 0.4;
+        const MIN_CONFIDENCE = 0.65;
 
-        // --- EXIT FUNCTIONALITY ---
+        // =============================================
+        //  STATE
+        // =============================================
+        let holdStartTime = 0;
+        let lastTypedLetter = "";
+        let landmarkHistory = [];
+        let resultHistory = [];
+        let confidenceHistory = [];
+
+        // =============================================
+        //  UTILITY FUNCTIONS
+        // =============================================
+        function clearText() {
+            wordDisplay.innerText = "_";
+            lastTypedLetter = "";
+        }
+
         function exitSession() {
-            // 1. Stop the camera stream to turn off the hardware light
             if (videoElement.srcObject) {
-                const tracks = videoElement.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
+                videoElement.srcObject.getTracks().forEach(track => track.stop());
                 videoElement.srcObject = null;
             }
-            // 2. Redirect to Home
             window.location.href = 'index.html';
         }
 
+        function typeLetter(char) {
+            if (char === "Space") char = " ";
+            if (char === "-" || char === "ILY" || char === "Rock") return;
+            let currentText = wordDisplay.innerText;
+            if (currentText === "_") currentText = "";
+            wordDisplay.innerText = currentText + char;
+        }
+
+        // =============================================
+        //  LANDMARK SMOOTHING
+        // =============================================
+        function smoothLandmarks(rawLandmarks) {
+            landmarkHistory.push(rawLandmarks.map(lm => ({ x: lm.x, y: lm.y, z: lm.z })));
+            if (landmarkHistory.length > SMOOTHER_WINDOW) {
+                landmarkHistory.shift();
+            }
+            if (landmarkHistory.length < 2) {
+                return rawLandmarks;
+            }
+
+            return rawLandmarks.map((lm, i) => {
+                const avgX = landmarkHistory.reduce((sum, h) => sum + h[i].x, 0) / landmarkHistory.length;
+                const avgY = landmarkHistory.reduce((sum, h) => sum + h[i].y, 0) / landmarkHistory.length;
+                const avgZ = landmarkHistory.reduce((sum, h) => sum + h[i].z, 0) / landmarkHistory.length;
+                return {
+                    x: lm.x * SMOOTHER_ALPHA + avgX * (1 - SMOOTHER_ALPHA),
+                    y: lm.y * SMOOTHER_ALPHA + avgY * (1 - SMOOTHER_ALPHA),
+                    z: lm.z * SMOOTHER_ALPHA + avgZ * (1 - SMOOTHER_ALPHA),
+                };
+            });
+        }
+
+        // =============================================
+        //  RESULT STABILIZATION
+        // =============================================
+        function stabilizeResult(letter, confidence) {
+            resultHistory.push(letter);
+            confidenceHistory.push(confidence);
+
+            if (resultHistory.length > STABILITY_WINDOW) {
+                resultHistory.shift();
+                confidenceHistory.shift();
+            }
+
+            const counts = {};
+            resultHistory.forEach((l, i) => {
+                if (!counts[l]) counts[l] = { count: 0, totalConf: 0 };
+                counts[l].count++;
+                counts[l].totalConf += confidenceHistory[i];
+            });
+
+            let bestLetter = "-";
+            let bestCount = 0;
+            let bestAvgConf = 0;
+
+            Object.entries(counts).forEach(([letter, { count, totalConf }]) => {
+                const avgConf = totalConf / count;
+                const consensusRatio = count / resultHistory.length;
+                if (consensusRatio >= REQUIRED_CONSENSUS && count > bestCount) {
+                    bestLetter = letter;
+                    bestCount = count;
+                    bestAvgConf = avgConf;
+                }
+            });
+
+            return { stableLetter: bestLetter, stableConfidence: bestAvgConf };
+        }
+
+        function resetStabilizer() {
+            landmarkHistory = [];
+            resultHistory = [];
+            confidenceHistory = [];
+        }
+
+        // =============================================
+        //  GEOMETRY HELPERS
+        // =============================================
+        function dist(lm, i1, i2) {
+            return Math.hypot(lm[i1].x - lm[i2].x, lm[i1].y - lm[i2].y);
+        }
+
+        function calcAngle(A, B, C) {
+            const AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2));
+            const BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2));
+            const AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2));
+            const cosine = (BC * BC + AB * AB - AC * AC) / (2 * BC * AB);
+            return Math.acos(Math.max(-1, Math.min(1, cosine))) * (180 / Math.PI);
+        }
+
+        function getFingerCurl(lm, fingerBase) {
+            const mcp = lm[fingerBase];
+            const pip = lm[fingerBase + 1];
+            const dip = lm[fingerBase + 2];
+            const tip = lm[fingerBase + 3];
+
+            const angle1 = calcAngle(mcp, pip, dip);
+            const angle2 = calcAngle(pip, dip, tip);
+
+            const curl1 = 1 - (angle1 - 90) / 90;
+            const curl2 = 1 - (angle2 - 90) / 90;
+
+            return Math.max(0, Math.min(1, (curl1 + curl2) / 2));
+        }
+
+        function isFingerExtended(lm, fingerBase) {
+            const curl = getFingerCurl(lm, fingerBase);
+            const tipToWrist = dist(lm, fingerBase + 3, 0);
+            const pipToWrist = dist(lm, fingerBase + 1, 0);
+            return curl < 0.4 || (tipToWrist > pipToWrist * 1.15 && curl < 0.55);
+        }
+
+        function getThumbState(lm, handLabel) {
+            const isLeft = handLabel === "Left";
+            const thumbTip = lm[4];
+            const indexMcp = lm[5];
+
+            let isOut = false;
+            let isCrossed = false;
+
+            if (isLeft) {
+                isOut = thumbTip.x < indexMcp.x - 0.03;
+                isCrossed = thumbTip.x > lm[9].x;
+            } else {
+                isOut = thumbTip.x > indexMcp.x + 0.03;
+                isCrossed = thumbTip.x < lm[9].x;
+            }
+
+            const isUp = thumbTip.y < lm[3].y - 0.05;
+            return { isOut, isCrossed, isUp };
+        }
+
+        function isHandHorizontal(lm) {
+            const indexDirection = Math.abs(lm[8].x - lm[5].x) / (Math.abs(lm[8].y - lm[5].y) + 0.001);
+            return indexDirection > 1.5;
+        }
+
+        function isPalmDown(lm) {
+            const avgTipZ = (lm[8].z + lm[12].z + lm[16].z + lm[20].z) / 4;
+            const avgBaseZ = (lm[5].z + lm[9].z + lm[13].z + lm[17].z) / 4;
+            return avgTipZ > avgBaseZ - 0.02;
+        }
+
+        // =============================================
+        //  MAIN ASL RECOGNITION (A-Z + Special)
+        // =============================================
+        function recognizeASL(lm, handLabel) {
+            const scores = {};
+            const isLeft = handLabel === "Left";
+
+            const indexExtended = isFingerExtended(lm, 5);
+            const middleExtended = isFingerExtended(lm, 9);
+            const ringExtended = isFingerExtended(lm, 13);
+            const pinkyExtended = isFingerExtended(lm, 17);
+
+            const fingerCurls = {
+                index: getFingerCurl(lm, 5),
+                middle: getFingerCurl(lm, 9),
+                ring: getFingerCurl(lm, 13),
+                pinky: getFingerCurl(lm, 17),
+            };
+
+            const extendedCount = [indexExtended, middleExtended, ringExtended, pinkyExtended].filter(Boolean).length;
+            const thumbState = getThumbState(lm, handLabel);
+            const handHorizontal = isHandHorizontal(lm);
+            const palmDown = isPalmDown(lm);
+
+            const thumbToIndex = dist(lm, 4, 8);
+            const thumbToMiddle = dist(lm, 4, 12);
+            const thumbToRing = dist(lm, 4, 16);
+            const indexToMiddle = dist(lm, 8, 12);
+            const indexToWrist = dist(lm, 8, 0);
+            const middleToRing = dist(lm, 12, 16);
+            const thumbToIndexPip = dist(lm, 4, 6);
+
+            // === A ===
+            if (extendedCount === 0 && thumbState.isOut && !handHorizontal) {
+                const allCurled = fingerCurls.index > 0.5 && fingerCurls.middle > 0.5 && fingerCurls.ring > 0.5 && fingerCurls.pinky > 0.5;
+                scores['A'] = allCurled ? 0.9 : 0.6;
+            }
+
+            // === B ===
+            if (extendedCount === 4 && !thumbState.isOut && !handHorizontal) {
+                const allStraight = fingerCurls.index < 0.3 && fingerCurls.middle < 0.3 && fingerCurls.ring < 0.3 && fingerCurls.pinky < 0.3;
+                scores['B'] = allStraight ? 0.9 : 0.65;
+            }
+
+            // === C ===
+            if (extendedCount < 2 && !handHorizontal) {
+                const cGap = thumbToIndex;
+                if (cGap > 0.08 && cGap < 0.25) {
+                    const curvature = (fingerCurls.index + fingerCurls.middle) / 2;
+                    if (curvature > 0.3 && curvature < 0.7) {
+                        scores['C'] = 0.75;
+                    }
+                }
+            }
+
+            // === D ===
+            if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                if (thumbToMiddle < 0.1 || dist(lm, 4, 11) < 0.08) {
+                    scores['D'] = 0.85;
+                }
+            }
+
+            // === E ===
+            if (extendedCount === 0 && !handHorizontal) {
+                const thumbDown = lm[4].y > lm[5].y;
+                const indexCurledTight = fingerCurls.index > 0.6;
+                if (thumbDown && indexCurledTight && indexToWrist < 0.3) {
+                    scores['E'] = 0.8;
+                }
+            }
+
+            // === F ===
+            if (!indexExtended && middleExtended && ringExtended && pinkyExtended) {
+                if (thumbToIndex < 0.08) {
+                    scores['F'] = 0.85;
+                }
+            }
+
+            // === G ===
+            if (handHorizontal && indexExtended && !middleExtended && !ringExtended && !pinkyExtended) {
+                const thumbParallel = Math.abs(lm[4].y - lm[8].y) < 0.15;
+                if (thumbState.isOut && thumbParallel) {
+                    scores['G'] = 0.88;
+                }
+            }
+
+            // === H ===
+            if (handHorizontal && indexExtended && middleExtended && !ringExtended && !pinkyExtended) {
+                if (!thumbState.isOut) {
+                    scores['H'] = 0.88;
+                }
+            }
+
+            // === I ===
+            if (!indexExtended && !middleExtended && !ringExtended && pinkyExtended && !handHorizontal) {
+                const pinkyAngle = calcAngle(lm[17], lm[18], lm[19]);
+                if (pinkyAngle > 140) {
+                    scores['I'] = 0.88;
+                }
+            }
+
+            // === J (static approximation) ===
+            if (!indexExtended && !middleExtended && !ringExtended && pinkyExtended) {
+                const pinkyCurved = fingerCurls.pinky > 0.2 && fingerCurls.pinky < 0.5;
+                if (pinkyCurved) {
+                    scores['J'] = 0.7;
+                }
+            }
+
+            // === K ===
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                if (lm[4].y < lm[6].y && thumbToIndexPip < 0.12) {
+                    const fingerSpread = indexToMiddle > 0.04;
+                    if (fingerSpread) {
+                        scores['K'] = 0.82;
+                    }
+                }
+            }
+
+            // === L ===
+            if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended && thumbState.isOut && !handHorizontal) {
+                const angleBetween = Math.abs(lm[4].x - lm[8].x) + Math.abs(lm[4].y - lm[8].y);
+                if (angleBetween > 0.15 && Math.abs(lm[4].y - lm[5].y) < 0.1) {
+                    scores['L'] = 0.9;
+                }
+            }
+
+            // === M ===
+            if (extendedCount === 0 && !handHorizontal) {
+                const thumbUnder = lm[4].y > lm[6].y && lm[4].y > lm[10].y && lm[4].y > lm[14].y;
+                const fingersTight = fingerCurls.index > 0.5 && fingerCurls.middle > 0.5 && fingerCurls.ring > 0.5;
+                const thumbVisible = thumbToIndexPip < 0.12;
+                if (thumbUnder && fingersTight && thumbVisible && !thumbState.isOut) {
+                    scores['M'] = 0.8;
+                }
+            }
+
+            // === N ===
+            if (extendedCount === 0 && !handHorizontal) {
+                const thumbUnder = lm[4].y > lm[6].y && lm[4].y > lm[10].y;
+                const ringNotOver = lm[4].y < lm[14].y || dist(lm, 4, 14) > 0.1;
+                const fingersTight = fingerCurls.index > 0.5 && fingerCurls.middle > 0.5;
+                if (thumbUnder && ringNotOver && fingersTight && !thumbState.isOut) {
+                    scores['N'] = 0.78;
+                }
+            }
+
+            // === O ===
+            if (thumbToIndex < 0.1 && thumbToMiddle < 0.12 && !handHorizontal) {
+                const circleShape = fingerCurls.index > 0.3 && fingerCurls.middle > 0.3;
+                if (circleShape) {
+                    scores['O'] = 0.8;
+                }
+            }
+
+            // === P ===
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) {
+                const pointingDown = lm[8].y > lm[5].y && lm[12].y > lm[9].y;
+                if (pointingDown && thumbState.isOut && palmDown) {
+                    scores['P'] = 0.82;
+                }
+            }
+
+            // === Q ===
+            if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended) {
+                const pointingDown = lm[8].y > lm[5].y + 0.05;
+                if (pointingDown && thumbState.isOut) {
+                    scores['Q'] = 0.8;
+                }
+            }
+
+            // === R ===
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                const isCrossed = isLeft ? lm[8].x > lm[12].x : lm[8].x < lm[12].x;
+                const crossAmount = Math.abs(lm[8].x - lm[12].x);
+                if (isCrossed && crossAmount > 0.02) {
+                    scores['R'] = 0.85;
+                }
+            }
+
+            // === S ===
+            if (extendedCount === 0 && !handHorizontal) {
+                const thumbInFront = lm[4].z < lm[8].z;
+                if (!thumbState.isOut && (thumbToMiddle < 0.1 || thumbToRing < 0.1) && thumbInFront) {
+                    scores['S'] = 0.75;
+                }
+            }
+
+            // === T ===
+            if (extendedCount === 0 && !handHorizontal) {
+                const thumbBetween = thumbToIndexPip < 0.08 || dist(lm, 4, 5) < 0.08;
+                const thumbUp = lm[4].y < lm[6].y;
+                if (thumbBetween && thumbUp) {
+                    scores['T'] = 0.78;
+                }
+            }
+
+            // === U ===
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                if (indexToMiddle < 0.04) {
+                    scores['U'] = 0.87;
+                }
+            }
+
+            // === V ===
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                const notCrossed = isLeft ? lm[8].x <= lm[12].x : lm[8].x >= lm[12].x;
+                if (indexToMiddle > 0.05 && notCrossed) {
+                    scores['V'] = 0.88;
+                }
+            }
+
+            // === W ===
+            if (indexExtended && middleExtended && ringExtended && !pinkyExtended && !handHorizontal) {
+                const fingersSpread = indexToMiddle > 0.03 && middleToRing > 0.03;
+                scores['W'] = fingersSpread ? 0.88 : 0.8;
+            }
+
+            // === X ===
+            if (!indexExtended && !middleExtended && !ringExtended && !pinkyExtended && !handHorizontal) {
+                const pipUp = lm[6].y < lm[5].y;
+                const tipDown = lm[8].y > lm[6].y;
+                const indexHooked = fingerCurls.index > 0.4 && fingerCurls.index < 0.8;
+                if (pipUp && tipDown && indexHooked) {
+                    scores['X'] = 0.82;
+                }
+            }
+
+            // === Y ===
+            if (!indexExtended && !middleExtended && !ringExtended && pinkyExtended && thumbState.isOut && !handHorizontal) {
+                const pinkyStraight = fingerCurls.pinky < 0.3;
+                const othersCurled = fingerCurls.index > 0.5 && fingerCurls.middle > 0.5 && fingerCurls.ring > 0.5;
+                if (pinkyStraight && othersCurled) {
+                    scores['Y'] = 0.9;
+                }
+            }
+
+            // === Z (static approximation) ===
+            if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended && !thumbState.isOut) {
+                const indexForward = lm[8].z < lm[5].z - 0.02;
+                if (indexForward) {
+                    scores['Z'] = 0.7;
+                }
+            }
+
+            // === Space ===
+            if (extendedCount === 4 && thumbState.isOut && !handHorizontal) {
+                const allOpen = fingerCurls.index < 0.3 && fingerCurls.middle < 0.3 && fingerCurls.ring < 0.3 && fingerCurls.pinky < 0.3;
+                scores['Space'] = allOpen ? 0.88 : 0.75;
+            }
+
+            // === ILY ===
+            if (indexExtended && !middleExtended && !ringExtended && pinkyExtended && thumbState.isOut && !handHorizontal) {
+                scores['ILY'] = 0.9;
+            }
+
+            // === Rock ===
+            if (indexExtended && !middleExtended && !ringExtended && pinkyExtended && !thumbState.isOut && !handHorizontal) {
+                scores['Rock'] = 0.85;
+            }
+
+            // === DISAMBIGUATION ===
+            // Y vs ILY
+            if (scores['Y'] && scores['ILY']) {
+                if (indexExtended) {
+                    scores['Y'] = Math.max(0, scores['Y'] - 0.3);
+                } else {
+                    scores['ILY'] = Math.max(0, scores['ILY'] - 0.3);
+                }
+            }
+
+            // Fist variants
+            if (extendedCount === 0) {
+                const fistLetters = ['M', 'N', 'S', 'A', 'E', 'T', 'X'];
+                let maxFist = '', maxFistScore = 0;
+                fistLetters.forEach(letter => {
+                    if (scores[letter] && scores[letter] > maxFistScore) {
+                        maxFistScore = scores[letter];
+                        maxFist = letter;
+                    }
+                });
+                fistLetters.forEach(letter => {
+                    if (letter !== maxFist && scores[letter]) {
+                        scores[letter] = Math.max(0, scores[letter] - 0.2);
+                    }
+                });
+            }
+
+            // G vs Q
+            if (scores['G'] && scores['Q']) {
+                if (lm[8].y > lm[5].y) {
+                    scores['G'] = Math.max(0, scores['G'] - 0.25);
+                } else {
+                    scores['Q'] = Math.max(0, scores['Q'] - 0.25);
+                }
+            }
+
+            // Two finger variants
+            if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) {
+                const twoFingerLetters = ['U', 'V', 'R', 'K', 'H'];
+                let maxTwo = '', maxTwoScore = 0;
+                twoFingerLetters.forEach(letter => {
+                    if (scores[letter] && scores[letter] > maxTwoScore) {
+                        maxTwoScore = scores[letter];
+                        maxTwo = letter;
+                    }
+                });
+                twoFingerLetters.forEach(letter => {
+                    if (letter !== maxTwo && scores[letter]) {
+                        scores[letter] = Math.max(0, scores[letter] - 0.15);
+                    }
+                });
+            }
+
+            // Single index variants
+            if (indexExtended && !middleExtended && !ringExtended && !pinkyExtended) {
+                const singleLetters = ['D', 'L', 'G', 'Q', 'Z'];
+                let maxSingle = '', maxSingleScore = 0;
+                singleLetters.forEach(letter => {
+                    if (scores[letter] && scores[letter] > maxSingleScore) {
+                        maxSingleScore = scores[letter];
+                        maxSingle = letter;
+                    }
+                });
+                singleLetters.forEach(letter => {
+                    if (letter !== maxSingle && scores[letter]) {
+                        scores[letter] = Math.max(0, scores[letter] - 0.15);
+                    }
+                });
+            }
+
+            // Find best match
+            let bestLetter = "-";
+            let bestScore = 0;
+
+            Object.entries(scores).forEach(([letter, score]) => {
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestLetter = letter;
+                }
+            });
+
+            if (bestScore < MIN_CONFIDENCE) {
+                bestLetter = "-";
+                bestScore = 0;
+            }
+
+            return { letter: bestLetter, confidence: bestScore };
+        }
+
+        // =============================================
+        //  MAIN PROCESSING LOOP
+        // =============================================
         function onResults(results) {
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
@@ -286,169 +862,117 @@
             ctx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
+                const rawLandmarks = results.multiHandLandmarks[0];
                 const handInfo = results.multiHandedness[0];
-                const handLabel = handInfo.label; 
+                const handLabel = handInfo.label;
 
-                handIndicator.innerText = handLabel === "Left" ? "Right Hand" : "Left Hand"; 
+                // Update hand indicator
+                handIndicator.innerText = handLabel === "Left" ? "Right Hand" : "Left Hand";
+                handIndicator.classList.remove('no-hand');
 
-                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 3 });
-                drawLandmarks(ctx, landmarks, { color: '#ffffff', lineWidth: 1, radius: 4 });
+                // Smooth landmarks
+                const smoothedLandmarks = smoothLandmarks(rawLandmarks);
 
-                // --- RECOGNITION ---
-                const rawLetter = recognizeASLAdvanced(landmarks, handLabel);
+                // Draw hand
+                drawConnectors(ctx, smoothedLandmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 3 });
+                drawLandmarks(ctx, smoothedLandmarks, { color: '#ffffff', lineWidth: 1, radius: 4 });
 
-                // --- STABILIZATION ---
-                if (rawLetter === lastRawLetter && rawLetter !== "-") {
-                    consecutiveFrames++;
+                // Recognize
+                const result = recognizeASL(smoothedLandmarks, handLabel);
+                const { stableLetter, stableConfidence } = stabilizeResult(result.letter, result.confidence);
+
+                // Update confidence display
+                const confPct = Math.round(stableConfidence * 100);
+                confPercent.innerText = confPct + '%';
+                confidenceFill.style.width = confPct + '%';
+                if (stableConfidence > 0.7) {
+                    confidenceFill.classList.add('active');
                 } else {
-                    consecutiveFrames = 0;
-                    lastRawLetter = rawLetter;
+                    confidenceFill.classList.remove('active');
                 }
 
-                if (consecutiveFrames > STABILITY_THRESHOLD) {
-                    if (rawLetter !== currentStableLetter) {
-                        currentStableLetter = rawLetter;
-                        gestureDisplay.innerText = currentStableLetter;
-                        holdStartTime = Date.now(); 
-                        confidenceFill.style.width = "0%";
-                    } else {
-                        // Filling the bar
-                        const duration = Date.now() - holdStartTime;
-                        const progress = Math.min((duration / HOLD_DURATION) * 100, 100);
-                        confidenceFill.style.width = progress + "%";
+                // Update gesture display
+                gestureDisplay.innerText = stableLetter;
+                if (stableLetter !== '-') {
+                    gestureDisplay.classList.remove('inactive');
+                    gestureDisplay.classList.add('glow');
+                } else {
+                    gestureDisplay.classList.add('inactive');
+                    gestureDisplay.classList.remove('glow');
+                }
 
-                        if (duration > HOLD_DURATION) {
-                            typeLetter(currentStableLetter);
-                            holdStartTime = Date.now(); 
-                            confidenceFill.style.width = "0%";
-                            // Visual feedback
-                            gestureDisplay.style.textShadow = "0 0 20px var(--color-accent)";
-                            setTimeout(() => gestureDisplay.style.textShadow = "none", 200);
-                        }
+                // Hold progress
+                let holdProgress = 0;
+                if (stableLetter !== '-' && stableLetter === lastTypedLetter) {
+                    holdProgress = 0;
+                    holdStartTime = Date.now();
+                } else if (stableLetter !== '-') {
+                    const now = Date.now();
+                    if (holdStartTime === 0) {
+                        holdStartTime = now;
                     }
+
+                    const elapsed = now - holdStartTime;
+                    holdProgress = Math.min(elapsed / HOLD_DURATION, 1);
+
+                    if (elapsed >= HOLD_DURATION && stableConfidence > MIN_CONFIDENCE) {
+                        lastTypedLetter = stableLetter;
+                        holdStartTime = Date.now();
+                        typeLetter(stableLetter);
+                        
+                        // Visual feedback
+                        gestureDisplay.style.textShadow = "0 0 30px var(--color-accent)";
+                        setTimeout(() => gestureDisplay.style.textShadow = "", 200);
+                    }
+                } else {
+                    holdStartTime = 0;
                 }
+
+                const holdPct = Math.round(holdProgress * 100);
+                holdPercent.innerText = holdPct + '%';
+                holdFill.style.width = holdPct + '%';
+                if (holdProgress >= 1) {
+                    holdFill.classList.add('active');
+                } else {
+                    holdFill.classList.remove('active');
+                }
+
             } else {
+                // No hand detected
                 gestureDisplay.innerText = "-";
+                gestureDisplay.classList.add('inactive');
+                gestureDisplay.classList.remove('glow');
                 handIndicator.innerText = "NO HAND";
+                handIndicator.classList.add('no-hand');
+                
+                confPercent.innerText = '0%';
+                holdPercent.innerText = '0%';
                 confidenceFill.style.width = "0%";
-                consecutiveFrames = 0;
+                holdFill.style.width = "0%";
+                confidenceFill.classList.remove('active');
+                holdFill.classList.remove('active');
+                
+                holdStartTime = 0;
+                resetStabilizer();
             }
+
             ctx.restore();
         }
 
-        function typeLetter(char) {
-            if(char === "Space") char = " ";
-            let currentText = wordDisplay.innerText;
-            if (currentText === "_") currentText = "";
-            wordDisplay.innerText = currentText + char;
-        }
+        // =============================================
+        //  INITIALIZE MEDIAPIPE
+        // =============================================
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
 
-        // ==========================================
-        //  ADVANCED ANGLE & GEOMETRY ALGORITHM
-        // ==========================================
-        
-        function calcAngle(A, B, C) {
-            const AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2));
-            const BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2));
-            const AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2));
-            return Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB)) * (180 / Math.PI);
-        }
-
-        function recognizeASLAdvanced(lm, handLabel) {
-            // Finger States (Open vs Closed) using ANGLES
-            const isFingerOpen = (idxBase) => {
-                const angle = calcAngle(lm[idxBase], lm[idxBase+1], lm[idxBase+2]);
-                const distTip = Math.hypot(lm[idxBase+3].x - lm[0].x, lm[idxBase+3].y - lm[0].y);
-                const distPip = Math.hypot(lm[idxBase+1].x - lm[0].x, lm[idxBase+1].y - lm[0].y);
-                return angle > 150 || (distTip > distPip * 1.2 && angle > 100); 
-            };
-
-            const indexOpen = isFingerOpen(5);
-            const middleOpen = isFingerOpen(9);
-            const ringOpen = isFingerOpen(13);
-            const pinkyOpen = isFingerOpen(17);
-
-            const fingersOpenCount = [indexOpen, middleOpen, ringOpen, pinkyOpen].filter(Boolean).length;
-
-            // Thumb Analysis
-            let thumbIsOut = false; 
-            if (handLabel === "Left") { 
-                 thumbIsOut = lm[4].x < lm[5].x - 0.02;
-            } else {
-                 thumbIsOut = lm[4].x > lm[5].x + 0.02;
-            }
-
-            const dist = (i1, i2) => Math.hypot(lm[i1].x - lm[i2].x, lm[i1].y - lm[i2].y);
-
-            // LOGIC
-            if (fingersOpenCount === 0) {
-                const indexToWrist = dist(8, 0);
-                if (lm[4].y > lm[5].y && indexToWrist < 0.3) return "E";
-                if (dist(4, 10) < 0.1 || dist(4, 14) < 0.1) return "S";
-                if (dist(4, 6) < 0.08 || dist(4, 5) < 0.08) return "T";
-                if (thumbIsOut || lm[4].y < lm[5].y) return "A";
-                return "S"; 
-            }
-
-            if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen) {
-                if (thumbIsOut) return "L";
-                if (dist(4, 12) < 0.1 || dist(4, 11) < 0.08) return "D";
-                return "1";
-            }
-            
-            // X (Hook)
-            if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) {
-                 if (lm[6].y < lm[5].y && lm[8].y > lm[6].y) return "X";
-            }
-
-            if (!indexOpen && !middleOpen && !ringOpen && pinkyOpen) return "I";
-
-            if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) {
-                if (lm[4].y < lm[6].y && dist(4, 6) < 0.1) return "K";
-                
-                let isCrossed = false;
-                if (handLabel === "Left") { if (lm[8].x > lm[12].x) isCrossed = true; } 
-                else { if (lm[8].x < lm[12].x) isCrossed = true; }
-
-                if (isCrossed) return "R";
-                if (dist(8, 12) < 0.045) return "U"; 
-                return "V";
-            }
-
-            if (indexOpen && !middleOpen && !ringOpen && pinkyOpen) {
-                if (thumbIsOut) return "ILY";
-                return "Rock";
-            }
-
-            if (!indexOpen && middleOpen && ringOpen && pinkyOpen) {
-                if (dist(4, 8) < 0.08) return "F";
-            }
-
-            if (indexOpen && middleOpen && ringOpen && !pinkyOpen) return "W";
-            if (!indexOpen && middleOpen && ringOpen && dist(4, 8) < 0.08) return "F";
-
-            if (indexOpen && middleOpen && ringOpen && pinkyOpen) {
-                if (thumbIsOut) return "Space";
-                return "B";
-            }
-
-            if (dist(4, 8) < 0.1 && dist(4, 12) < 0.1) return "O";
-            const cGap = dist(4, 8);
-            if (cGap > 0.08 && cGap < 0.25 && Math.abs(lm[4].x - lm[8].x) < 0.2) {
-                 if (!indexOpen && fingersOpenCount < 2) return "C";
-            }
-
-            return "-";
-        }
-
-        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.7
+            minDetectionConfidence: 0.75,
+            minTrackingConfidence: 0.75
         });
+
         hands.onResults(onResults);
 
         const camera = new Camera(videoElement, {
@@ -456,6 +980,7 @@
             width: 640,
             height: 480,
         });
+
         camera.start();
     </script>
 </body>
