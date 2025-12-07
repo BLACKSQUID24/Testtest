@@ -42,10 +42,14 @@
         .social-btn { display: flex; align-items: center; justify-content: center; padding: 15px; text-decoration: none; font-size: 1.2rem; border-radius: 10px; font-weight: 600; transition: transform 0.2s, filter 0.2s; color: white; }
         .social-btn i { margin-right: 15px; font-size: 1.5rem; }
         .social-btn:hover { transform: scale(1.02); filter: brightness(1.2); }
+        
         .fb { background: #1877F2; }
         .ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
         .wa { background: #25D366; }
-        .yt { background: #FF0000; }
+        
+        /* สไตล์สำหรับ TikTok (พื้นหลังดำ + ขอบเล็กน้อยเพื่อให้เห็นชัดบนพื้นหลังมืด) */
+        .tt { background: #000000; border: 1px solid #333; } 
+        
         .back-home { display: inline-block; margin-top: 40px; color: #888; text-decoration: none; font-size: 0.9rem; }
         .back-home:hover { color: var(--color-accent); }
 
@@ -76,7 +80,7 @@
             <a href="#" target="_blank" class="social-btn fb"><i class="fab fa-facebook-f"></i> Facebook</a>
             <a href="#" target="_blank" class="social-btn ig"><i class="fab fa-instagram"></i> Instagram</a>
             <a href="#" target="_blank" class="social-btn wa"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-            <a href="#" target="_blank" class="social-btn yt"><i class="fab fa-youtube"></i> YouTube</a>
+            <a href="#" target="_blank" class="social-btn tt"><i class="fab fa-tiktok"></i> TikTok</a>
         </div>
 
         <a href="index.html" class="back-home">← Back to Home</a>
