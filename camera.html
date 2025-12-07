@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASL Decoder - High Precision</title>
+    <title>ASL Decoder - High Precision v2</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -186,9 +186,9 @@
     </header>
 
     <div class="container">
-        <h1>ASL <span>Decoder</span></h1>
+        <h1>ASL <span>Pro Decoder</span></h1>
         <div class="hint">
-            <i class="fas fa-hand-paper"></i> Precise Mode. Hold gesture for 1 second.
+            <i class="fas fa-hand-paper"></i> Hold gesture for 1 second to type.
         </div>
 
         <div class="main-display">
@@ -228,8 +228,8 @@
         const handIndicator = document.getElementById("hand-indicator");
 
         let holdStartTime = 0;
-        const HOLD_DURATION = 1000; 
-        const STABILITY_THRESHOLD = 5; // Reduced slightly for responsiveness
+        const HOLD_DURATION = 1000; // ms
+        const STABILITY_THRESHOLD = 8; // Increased for better stability
         
         let currentStableLetter = "-";
         let lastRawLetter = "-";
@@ -245,20 +245,18 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 const handInfo = results.multiHandedness[0];
-                const handLabel = handInfo.label; // "Left" or "Right"
+                const handLabel = handInfo.label; 
 
-                // Display Hand
                 handIndicator.innerText = handLabel === "Left" ? "Right Hand" : "Left Hand"; 
 
-                // Draw Skeleton
                 drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF99', lineWidth: 3 });
                 drawLandmarks(ctx, landmarks, { color: '#ffffff', lineWidth: 1, radius: 4 });
 
-                // RECOGNIZE
-                const rawLetter = recognizeASLGeometric(landmarks, handLabel);
+                // --- RECOGNITION ---
+                const rawLetter = recognizeASLAdvanced(landmarks, handLabel);
 
-                // STABILIZE
-                if (rawLetter === lastRawLetter) {
+                // --- STABILIZATION ---
+                if (rawLetter === lastRawLetter && rawLetter !== "-") {
                     consecutiveFrames++;
                 } else {
                     consecutiveFrames = 0;
@@ -271,7 +269,8 @@
                         gestureDisplay.innerText = currentStableLetter;
                         holdStartTime = Date.now(); 
                         confidenceFill.style.width = "0%";
-                    } else if (currentStableLetter !== "-") {
+                    } else {
+                        // Filling the bar
                         const duration = Date.now() - holdStartTime;
                         const progress = Math.min((duration / HOLD_DURATION) * 100, 100);
                         confidenceFill.style.width = progress + "%";
@@ -280,9 +279,9 @@
                             typeLetter(currentStableLetter);
                             holdStartTime = Date.now(); 
                             confidenceFill.style.width = "0%";
-                            // Flash effect
-                            gestureDisplay.style.color = "white";
-                            setTimeout(() => gestureDisplay.style.color = "var(--color-accent)", 200);
+                            // Visual feedback
+                            gestureDisplay.style.textShadow = "0 0 20px var(--color-accent)";
+                            setTimeout(() => gestureDisplay.style.textShadow = "none", 200);
                         }
                     }
                 }
@@ -290,161 +289,220 @@
                 gestureDisplay.innerText = "-";
                 handIndicator.innerText = "NO HAND";
                 confidenceFill.style.width = "0%";
+                consecutiveFrames = 0;
             }
             ctx.restore();
         }
 
         function typeLetter(char) {
+            if(char === "Space") char = " ";
             let currentText = wordDisplay.innerText;
             if (currentText === "_") currentText = "";
             wordDisplay.innerText = currentText + char;
         }
 
         // ==========================================
-        //  ADVANCED GEOMETRIC RECOGNITION LOGIC
+        //  ADVANCED ANGLE & GEOMETRY ALGORITHM
         // ==========================================
-        function recognizeASLGeometric(lm, handLabel) {
-            // Helper: 2D Distance
-            const dist = (i1, i2) => Math.hypot(lm[i1].x - lm[i2].x, lm[i1].y - lm[i2].y);
+        
+        // Helper: Calculate angle between three points (B is the center)
+        function calcAngle(A, B, C) {
+            const AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2));
+            const BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2));
+            const AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2));
+            return Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB)) * (180 / Math.PI);
+        }
 
-            // 1. Is Finger Extended? (Check Tip vs PIP height)
-            // Note: In visual coordinates, Y is smaller at top.
-            const isExt = (tip, pip) => lm[tip].y < lm[pip].y; 
-
-            // 2. Is Finger Curled? (Tip is below PIP)
-            const isCurled = (tip, pip) => lm[tip].y > lm[pip].y;
-
-            // Fingers State
-            const indexExt = isExt(8, 6);
-            const middleExt = isExt(12, 10);
-            const ringExt = isExt(16, 14);
-            const pinkyExt = isExt(20, 18);
+        function recognizeASLAdvanced(lm, handLabel) {
+            // 1. Determine Finger States (Open vs Closed) using ANGLES
+            // Using angles is more accurate than Y-height because it works if hand is tilted.
+            // Index: 5-6-7-8 (MCP-PIP-DIP-TIP). We check angle at PIP (6) and DIP (7)
             
-            const fingersUpCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
+            const isFingerOpen = (idxBase) => {
+                // Angle at PIP (idxBase + 1)
+                const angle = calcAngle(lm[idxBase], lm[idxBase+1], lm[idxBase+2]);
+                // Also check if Tip is further from Wrist(0) than PIP
+                const distTip = Math.hypot(lm[idxBase+3].x - lm[0].x, lm[idxBase+3].y - lm[0].y);
+                const distPip = Math.hypot(lm[idxBase+1].x - lm[0].x, lm[idxBase+1].y - lm[0].y);
+                return angle > 150 || (distTip > distPip * 1.2 && angle > 100); 
+            };
 
-            // 3. Thumb State (Crucial for A vs S vs E)
-            // We need to know if thumb is "Across" the palm or "Out" to the side.
-            // X coordinates: Left is 0, Right is 1.
+            const indexOpen = isFingerOpen(5);
+            const middleOpen = isFingerOpen(9);
+            const ringOpen = isFingerOpen(13);
+            const pinkyOpen = isFingerOpen(17);
+
+            const fingersOpenCount = [indexOpen, middleOpen, ringOpen, pinkyOpen].filter(Boolean).length;
+
+            // 2. Thumb Analysis
+            // Is thumb "Out" (away from palm) or "Across" (over palm)?
+            // Note: MediaPipe X coords: 0 is left, 1 is right.
             
-            let thumbIsOut = false; // Like in 'A' or '5'
-            let thumbIsAcross = false; // Like in 'S' or 'M'
-            
-            // Handedness logic for Thumb
-            if (handLabel === "Left") { // Visual Right Hand
-                // Thumb Tip < Index MCP means it's to the Left (Out)
-                thumbIsOut = lm[4].x < lm[5].x; 
-                // Thumb Tip > Index MCP means it's to the Right (Across)
-                thumbIsAcross = lm[4].x > lm[5].x;
-            } else { // Visual Left Hand
-                thumbIsOut = lm[4].x > lm[5].x;
-                thumbIsAcross = lm[4].x < lm[5].x;
+            let thumbIsOut = false; 
+            // Normalize X based on hand (Right Hand vs Left Hand)
+            // For Right Hand (on screen Left): Thumb(4) x should be < IndexMCP(5) x to be "Out"
+            if (handLabel === "Left") { // Screen Right (User's Right Hand mirrored)
+                 thumbIsOut = lm[4].x < lm[5].x - 0.02;
+            } else {
+                 thumbIsOut = lm[4].x > lm[5].x + 0.02;
             }
 
-            // ================= LOGIC TREE =================
+            // Distances
+            const dist = (i1, i2) => Math.hypot(lm[i1].x - lm[i2].x, lm[i1].y - lm[i2].y);
 
-            // --- FIST GROUP (0 Fingers Up) ---
-            if (fingersUpCount === 0) {
-                // E: Thumb curled low, touching/near index base (MCP)
-                // A: Thumb is OUT to the side.
-                // S: Thumb is ACROSS the fingers (covering PIPs).
+            // ================= LOGIC GATES =================
+
+            // --- ZERO FINGERS (Fist-like) ---
+            if (fingersOpenCount === 0) {
+                // Potential: A, E, S, M, N, T
                 
-                // Check E: Thumb tip is vertically close to Index MCP
-                if (dist(4, 5) < 0.08 && lm[4].y > lm[5].y - 0.05) {
+                // E CHECK: Fingers are curled very tight. Tips are close to Wrist/MCP.
+                // Thumb is usually tucked low.
+                // Distance from IndexTip(8) to Wrist(0) is short
+                const indexToWrist = dist(8, 0);
+                const thumbToIndexBase = dist(4, 5);
+
+                if (lm[4].y > lm[5].y && indexToWrist < 0.3) {
                     return "E";
                 }
 
-                // Check S: Thumb tip is high (near Index/Middle PIP)
-                if (lm[4].y < lm[6].y + 0.05 && thumbIsAcross) {
+                // S CHECK: Thumb is ACROSS the fingers (covering PIP/DIPs).
+                // Thumb tip (4) crosses Middle Finger MCP/PIP X-axis.
+                // Simpler: Thumb tip is close to Middle Finger PIP(10) or Ring PIP(14)
+                if (dist(4, 10) < 0.1 || dist(4, 14) < 0.1) {
                     return "S";
                 }
 
-                // Check A: Thumb is clearly out to the side
-                if (thumbIsOut) {
+                // M / N / T CHECKS (Thumb tucking between fingers)
+                // These are hard in 2D, but we can try heuristics.
+                // T: Thumb tip is near Index PIP (6) or MCP (5) but higher than S
+                if (dist(4, 6) < 0.08 || dist(4, 5) < 0.08) return "T";
+                
+                // M/N: Thumb is tucked under.
+                // Often confused with S. 
+                // N: Thumb near Middle PIP(10)
+                // M: Thumb near Ring PIP(14)
+                // For now, let's prioritize A/S/E as they are standard. 
+                // We will return S for general fist with thumb across.
+
+                // A CHECK: Thumb is sticking UP/OUT.
+                // Thumb Tip is higher than Thumb IP and Index MCP
+                if (thumbIsOut || lm[4].y < lm[5].y) {
                     return "A";
                 }
-
-                // Fallback for fist
-                return "S"; 
+                
+                return "S"; // Fallback
             }
 
-            // --- ONE FINGER GROUP ---
-            if (indexExt && !middleExt && !ringExt && !pinkyExt) {
-                // D: Thumb touches Middle finger tip or side
-                if (dist(4, 12) < 0.1 || dist(4, 11) < 0.1) return "D";
-                // L: Thumb is OUT and extended
+            // --- ONE FINGER ---
+            if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen) {
+                // D: Thumb touches Middle finger (or Ring). Shape is round.
+                // L: Thumb is OUT.
+                // 1: Thumb is across (like S) or tucked.
+                
                 if (thumbIsOut) return "L";
                 
-                return "1"; // Or D fallback
-            }
-
-            if (!indexExt && !middleExt && !ringExt && pinkyExt) {
-                // I: Thumb crossed in front
-                if (thumbIsAcross) return "I";
-                // Y: Thumb is OUT
-                if (thumbIsOut) return "Y";
-            }
-
-            // --- TWO FINGERS GROUP ---
-            if (indexExt && middleExt && !ringExt && !pinkyExt) {
-                // V vs U vs R
+                // D vs 1/Index
+                // D: Thumb tip(4) touches Middle Tip(12) or Middle PIP(10) to form a circle
+                if (dist(4, 12) < 0.1 || dist(4, 11) < 0.08) return "D";
                 
-                // R: Fingers Crossed (Index X and Middle X are very close or swapped)
-                // We check lateral distance between tips.
+                // X (Hook): Index is curled? 
+                // We checked "indexOpen" earlier. If index is partially curled (hook),
+                // our angle check might have returned false.
+                // But if it returned true, it's likely "1".
+                return "1";
+            }
+            
+            // Check for X (Hook) separately:
+            // Index PIP angle is sharp, but overall direction is up.
+            if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) {
+                 // Check if Index PIP is high, but Tip is lower than PIP (hooked)
+                 if (lm[6].y < lm[5].y && lm[8].y > lm[6].y) return "X";
+            }
+
+            if (!indexOpen && !middleOpen && !ringOpen && pinkyOpen) {
+                // I vs J
+                // J involves motion (impossible in static frame).
+                return "I";
+            }
+
+            // --- TWO FINGERS ---
+            if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) {
+                // V: Tips spread
+                // U: Tips together
+                // R: Crossed
+                // K: Thumb stands between them (Thumb tip up)
+
                 const tipDist = dist(8, 12);
                 
-                // Check for Cross (R)
-                // Logic: If X coordinates swap relative to Hand side, or just very close
+                // K Check: Thumb tip (4) is high (near Index PIP)
+                if (lm[4].y < lm[6].y && dist(4, 6) < 0.1) return "K";
+
+                // R Check: Cross. Compare X coordinates.
                 let isCrossed = false;
-                if (handLabel === "Left") {
-                    if (lm[8].x > lm[12].x) isCrossed = true; // Index moved right of middle
+                if (handLabel === "Left") { // Visual Right
+                    if (lm[8].x > lm[12].x) isCrossed = true;
                 } else {
                     if (lm[8].x < lm[12].x) isCrossed = true;
                 }
-                
-                if (isCrossed || tipDist < 0.035) return "R";
-                if (tipDist < 0.065) return "U";
+
+                if (isCrossed) return "R";
+                if (tipDist < 0.045) return "U"; // Very close
                 return "V";
             }
 
-            if (indexExt && !middleExt && !ringExt && pinkyExt) {
-                // Rock on sign / ILY
-                if (thumbIsOut) return "ILY"; // I Love You
+            if (indexOpen && !middleOpen && !ringOpen && pinkyOpen) {
+                // Rock / ILY
+                // ILY: Thumb is OUT
+                // Rock: Thumb is ACROSS
+                if (thumbIsOut) return "ILY";
                 return "Rock";
             }
 
-            // --- THREE FINGERS GROUP ---
-            if (indexExt && middleExt && ringExt && !pinkyExt) {
-                // F: Thumb and Index are curled/touching? Wait, F is Index/Thumb circle.
-                // If F, Index is NOT extended. So this is W.
-                return "W";
-            }
-            
-            // --- F CHECK (Circle) ---
-            // Index and Thumb tips close, others up
-            if (!indexExt && middleExt && ringExt && pinkyExt) {
+            if (!indexOpen && middleOpen && ringOpen && pinkyOpen) {
+                // F: Thumb and Index tips touch
                 if (dist(4, 8) < 0.08) return "F";
             }
 
-            // --- O and C CHECK ---
-            // These involve curved fingers, which might not register as "Extended" or "Curled" clearly.
-            // O: All tips touching thumb.
-            // C: Hand shaped like C.
-            
-            // Check O: Thumb tip close to Index tip AND Middle tip
-            if (dist(4, 8) < 0.08 && dist(4, 12) < 0.08) {
-                return "O";
+            // --- THREE FINGERS ---
+            if (indexOpen && middleOpen && ringOpen && !pinkyOpen) {
+                return "W"; // Sometimes "6" depending on region, but W is standard ASL
             }
             
-            // Check C: Thumb and Index tips far apart (vertical), but x-aligned
-            if (!indexExt && !middleExt && thumbIsOut) {
-                 const cDist = dist(4, 8);
-                 if (cDist > 0.08 && cDist < 0.25) return "C";
+            // F Alternate (sometimes pinky isn't fully straight in vision)
+            if (!indexOpen && middleOpen && ringOpen) {
+                if (dist(4, 8) < 0.08) return "F";
             }
 
-            // --- FOUR/FIVE FINGERS ---
-            if (indexExt && middleExt && ringExt && pinkyExt) {
-                if (thumbIsAcross) return "B"; // Thumb tucked
-                return " "; // 5/Open Palm = Space
+            // --- FOUR FINGERS ---
+            if (indexOpen && middleOpen && ringOpen && pinkyOpen) {
+                // B: Thumb tucked across palm
+                // 5/Space: Thumb out
+                
+                if (thumbIsOut) return "Space";
+                return "B";
+            }
+
+            // --- SPECIAL SHAPES (O, C) ---
+            // These often register as 0 open fingers because the tips are curled
+            // Check Tip distances
+            
+            // O: Thumb touches Index(8) and Middle(12)
+            if (dist(4, 8) < 0.1 && dist(4, 12) < 0.1) return "O";
+
+            // C: Hand forms C shape. 
+            // Fingers are slightly curled but not closed.
+            // Thumb is low, fingers are high.
+            // Check gap between Thumb Tip and Index Tip
+            const cGap = dist(4, 8);
+            if (cGap > 0.08 && cGap < 0.25) {
+                // Ensure fingers are aligned (similar X)
+                if (Math.abs(lm[4].x - lm[8].x) < 0.2) {
+                     // Not a fist (tips not touching palm)
+                     // Hard to distinguish from "rest", so we rely on context or hold
+                     // Simple heuristic:
+                     if (!indexOpen && fingersOpenCount < 2) return "C";
+                }
             }
 
             return "-";
@@ -454,7 +512,7 @@
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
-            minDetectionConfidence: 0.7, // Higher confidence for better precision
+            minDetectionConfidence: 0.7,
             minTrackingConfidence: 0.7
         });
         hands.onResults(onResults);
